@@ -126,6 +126,10 @@ class Emitter {
           $line_last = $group_max;
         }
         break;
+      case '|':
+        $group_min = 1;
+        $group_max = count($groupAST['params']);
+        break;
       default:
         throw new Exception("Unknown group type '" . $groupAST['value'] . "' for group '"  . $groupAST['name']);
         break;
@@ -133,11 +137,15 @@ class Emitter {
 
     $rand = mt_rand($group_min, $group_max);
 
-    foreach($groupAST['params'] as $k => $line){
-      if(isset($line['range_max'])){
-        if($rand >= $line['range_min'] && $rand <= $line['range_max']) $lineProg = $k;
-      } else {
-        if($rand == $line['range']) $lineProg = $k;
+    if($groupAST['value'] == '|'){
+      $lineProg = $rand - 1;
+    } else {
+      foreach($groupAST['params'] as $k => $line){
+        if(isset($line['range_max'])){
+          if($rand >= $line['range_min'] && $rand <= $line['range_max']) $lineProg = $k;
+        } else {
+          if($rand == $line['range']) $lineProg = $k;
+        }
       }
     }
 

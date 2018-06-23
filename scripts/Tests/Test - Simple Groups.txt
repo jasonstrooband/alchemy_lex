@@ -1,7 +1,7 @@
 # Basic Test Script to test basic groups
 
-:Start {
-  1:[Single], [Sequential], [Mixed], [Probability]
+|Start {
+  :[Single], [Sequential], [Mixed], [Probability], [Equal]
 }
 
 :Single {
@@ -30,4 +30,11 @@
   1:Probability Two
   1:Probability Three
   3:Probability Four
+}
+
+|Equal {
+  :Equal One
+  :Equal Two
+  :Equal Three
+  :Equal Four
 }

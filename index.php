@@ -1,9 +1,11 @@
 <?php
   // TODO: Write in comments for fields
-  // TODO: Add equal share line range
   // TODO: Add expressions with math support and precedence
+  // TODO: Add error checking for equal share group type
+  // TODO: Add error check for lines without a number range or single and not equal share group
 
   ini_set('xdebug.var_display_max_depth', 10);
+  ini_set('xdebug.var_display_max_children', -1);
 
   $script_names = array_slice(scandir("./scripts"), 2);
 

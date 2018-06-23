@@ -90,6 +90,7 @@ class Parser {
       // Line expression
       case 'T_GROUP_LINE_SINGLE_NUMBER':
       case 'T_GROUP_LINE_RANGE_NUMBER':
+      case 'T_GROUP_LINE_EQUAL_NUMBER':
         $this->parseOutput = true;
         return $this->parseExpression('line');
         break;
@@ -140,7 +141,9 @@ class Parser {
         break;
       case 'line':
         $close = 'T_NEWLINE';
-        if($token['token'] == 'T_GROUP_LINE_SINGLE_NUMBER'){
+        if($token['token'] == 'T_GROUP_LINE_EQUAL_NUMBER'){
+          // Do nothing, there is no range to calculate
+        } else if($token['token'] == 'T_GROUP_LINE_SINGLE_NUMBER'){
           $node['range'] = rtrim($token['value'], ':');
         } else {
           $range = explode('-', $token['value']);
@@ -167,7 +170,7 @@ class Parser {
     if(isset($close)){
       while(!($token['token'] === $close)){
         if($token['token'] == 'T_EOF'){
-          throw new Exception("Unexpected end of file, expected '" . $delimiter . "'");
+          throw new Exception("Unexpected end of file, expected '" . $delimiter . "' - '" . $close . "'");
         }
         $this->current++;
         $token = $this->tokens[$this->current];
