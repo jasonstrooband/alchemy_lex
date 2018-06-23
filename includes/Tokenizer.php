@@ -18,7 +18,7 @@ class Tokenizer {
     "/\G(\])/"                       => "T_GROUPCALL_CLOSE_BRACKET",
     "/\G(\()/"                       => "T_EXPRESSION_OPEN_BRACKET",
     "/\G(\))/"                       => "T_EXPRESSION_CLOSE_BRACKET",
-    "/\G(\~)/"                       => "T_FUNCTION_SEPARATOR",
+    //"/\G(\~)/"                       => "T_FUNCTION_SEPARATOR",
   );
   protected static $_terminals_math = array(
     "/\G(\+)/" => "T_MATH_ADDITION",
@@ -27,7 +27,7 @@ class Tokenizer {
     "/\G(\/)/" => "T_MATH_DIVISION",
   );
   protected static $_terminals_general = array(
-    "/\G(\s*[a-zA-Z].*?)(?:[\[\]\(\)\r\n])/" => "T_STRING",
+    "/\G(\s*[a-zA-Z].*?)(?:[\[\]\(\)\_\r\n])/" => "T_STRING",
     "/\G(\r)/"                               => "T_NEWLINE",
     "/\G(\s+)/"                              => "T_WHITESPACE",
     "/\G([\.\,\;\:\?\!\'\"\-\_\/])/"         => "T_PUNCTUATION",
@@ -52,6 +52,11 @@ class Tokenizer {
       static::$_terminals_math,
       static::$_terminals_general
     );
+
+    $source = $this->applyMultiline($source);
+
+    // Separate the lines into an array
+    $source = explode("\n", $source);
 
     foreach($source as $number => $line){
       $this->offset = 0;
@@ -93,5 +98,19 @@ class Tokenizer {
     }
 
     throw new Exception("Unable to tokenize line at " . ($number + 1) . "-" . ($this->offset + 1) . ". " . json_encode($string));
+  }
+
+  protected function applyMultiline($str){
+    //echo "<pre>";
+    //print_r(json_encode($str));
+    //echo "</pre>";
+
+    $str = preg_replace('/\_(?:\r|\n)\s+/', '', $str);
+
+    //echo "<pre>";
+    //print_r(json_encode($str));
+    //echo "</pre>";
+
+    return $str;
   }
 }

@@ -3,6 +3,7 @@
   // TODO: Add expressions with math support and precedence
   // TODO: Add error checking for equal share group type
   // TODO: Add error check for lines without a number range or single and not equal share group
+  // TODO: Add error check for multiline to see if the next line is an output line
 
   ini_set('xdebug.var_display_max_depth', 10);
   ini_set('xdebug.var_display_max_children', -1);
@@ -42,12 +43,10 @@
 
   if(!isset($_GET['script']) || $_GET['script'] == ''){
     $input = file_get_contents('./scripts/Tests/Test-Basic.txt', true);
-    $lines = explode("\n", $input);
   } else {
     $input = file_get_contents('./scripts/' . $_GET['script'] . '.txt', true);
-    $lines = explode("\n", $input);
   }
-  $tokens = new Tokenizer($lines);
+  $tokens = new Tokenizer($input);
   $ast = new Parser($tokens->output);
   $emitter = new Emitter($ast->output);
 

@@ -1,7 +1,7 @@
 # Complex Test Script to test more complex groups, recursion and a basic function
 
-:Start {
-  1:You see a [Creature], worth {Dice~1d6*1000} experience.
+|Start {
+  :You see a [Creature], worth {Dice~1d6*1000} experience.
 }
 
 :Creature {

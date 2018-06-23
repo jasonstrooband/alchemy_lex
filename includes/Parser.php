@@ -97,6 +97,7 @@ class Parser {
       // After newline no more parsing content
       case 'T_NEWLINE':
         $this->parseOutput = false;
+        $this->inMultiline = false;
         break;
       // Group call Expression
       case 'T_GROUPCALL_OPEN_BRACKET':
@@ -110,7 +111,7 @@ class Parser {
       case 'T_MATH_SUBTRACTION':
       case 'T_MATH_MULTIPLY':
       case 'T_MATH_DIVISION':
-        //s$this->maybeOperator($token, $this->peekPrevious(), 0);
+        //$this->maybeOperator($token, $this->peekPrevious(), 0);
         break;
       // End of Script
       case 'T_EOF':
@@ -141,6 +142,7 @@ class Parser {
         break;
       case 'line':
         $close = 'T_NEWLINE';
+
         if($token['token'] == 'T_GROUP_LINE_EQUAL_NUMBER'){
           // Do nothing, there is no range to calculate
         } else if($token['token'] == 'T_GROUP_LINE_SINGLE_NUMBER'){
@@ -150,6 +152,7 @@ class Parser {
           $node['range_min'] = rtrim($range[0], ':');
           $node['range_max'] = rtrim($range[1], ':');
         }
+
         break;
       case 'groupcall':
         $close = 'T_GROUPCALL_CLOSE_BRACKET';

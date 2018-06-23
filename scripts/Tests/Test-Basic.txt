@@ -1,7 +1,7 @@
 # Basic Test Script to test basic groups
 
-:Start {
-  1:[Coin] Coin
+|Start {
+  :[Coin] Coin
 }
 
 :Coin {
