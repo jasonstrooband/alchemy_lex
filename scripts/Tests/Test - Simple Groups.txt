@@ -1,0 +1,33 @@
+# Basic Test Script to test basic groups
+
+:Start {
+  1,[Single] [Sequential] [Mixed] [Probability]
+}
+
+:Single {
+  1,Single One
+  2,Single Two
+  3,Single Three
+  4,Single Four
+}
+
+:Sequential {
+  1-2,Sequential One
+  3-4,Sequential Two
+  5-6,Sequential Three
+  7-8,Sequential Four
+}
+
+:Mixed {
+  1,Mixed One
+  2-3,Mixed Two
+  4,Mixed Three
+  5-6,Mixed Four
+}
+
+;Probability {
+  1,Probability One
+  1,Probability Two
+  1,Probability Three
+  3,Probability Four
+}

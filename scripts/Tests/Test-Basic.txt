@@ -1,0 +1,12 @@
+# Basic Test Script to test basic groups
+
+:Start {
+  1,[Coin] Coin
+}
+
+:Coin {
+  1,Platinum
+  2,Gold
+  3-5,Silver
+  6,Bronze
+}

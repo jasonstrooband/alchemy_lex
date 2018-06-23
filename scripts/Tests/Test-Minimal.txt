@@ -1,0 +1,6 @@
+# Minimal script for testing very basic functionality
+
+:Start {
+  1,Hello World!
+  2,Hi there!
+}

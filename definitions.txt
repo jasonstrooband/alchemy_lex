@@ -1,0 +1,90 @@
+Inspirations
+	Tablesmith
+		http://www.mythosa.net/p/tablesmith.html
+		https://randomdm.wordpress.com/tablesmith-tuesdays/
+		https://groups.io/g/tablesmith
+	Perchance
+		https://perchance.org/examples
+	RandomGen
+		http://orteil.dashnet.org/randomgen/?do=create
+	Inspiration Pad Pro
+		http://www.nbos.com/products/inspiration-pad-pro
+		http://www.rpginspiration.com/tables/AdventureHooks.ipt
+
+-------------------------------------------------------------------------------------------
+
+V1 Release Funtionality:
+	Comments
+		Line
+			Syntax:# Comment
+		Block
+			Syntax:/* Block Comment */
+	Group Calls
+		Syntax:[GroupName]
+	Group Heading
+		Sequential
+			Syntax::GroupName
+		Probability
+			Syntax:;GroupName
+	Lines Roll
+		Equal Share
+			Syntax:
+		Single Share
+			Syntax:x,
+		Range Share
+			Syntax:x-x,
+	Lines Continue - continue output of previous line
+		Syntax:_
+	Functions
+		Syntax:{x~param1,param2,etc...}
+		Dice
+		???
+
+-------------------------------------------------------------------------------------------
+	
+V2 Release Funtionality:
+	Variables
+		Definition
+			Syntax:%var%,value
+		Assignment
+			Syntax:var = value
+			Syntax:var += value
+			Syntax:var -= value
+			Syntax:var *= value
+			Syntax:var /= value
+	Group Call Repeats
+		Before group name in table calls
+		Must be positive number
+		Syntax: [5x:GroupName]
+	No Repeat Groups
+		Before group name in table calls
+		Syntax:[!GroupName]
+	Group Defaults
+		After group heading
+		Syntax:<,
+	Reroll group call
+		Syntax:
+	Other Table Groups
+		Syntax:[TableName:GroupName]
+	Lines Roll
+		Dynamic Share - based on variable
+			Syntax:
+	Functions
+		???
+
+-------------------------------------------------------------------------------------------
+
+V3 Release Functionality
+	Lines Roll Conditionals
+		Syntax:
+	Lines Output Conditionals
+		Syntax:
+	Security Updates
+		Stop injection and only approved html tags
+	Functions
+		Complete Functionality
+
+-------------------------------------------------------------------------------------------
+
+V4 Release Functionality
+	Unity Build Alpha

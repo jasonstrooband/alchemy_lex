@@ -1,0 +1,23 @@
+# The most simple comment is a line comment, everything
+# on that line is not read by the engine
+
+/*
+  This is a block comment anything in-between the open and
+  close is not read by the engine and can cross multiple
+  lines without the need to make sure it is still a comment
+*/
+
+/*
+  Comments are handy for adding in information about what
+  the script is doing so that you or others can look at
+  it and know exactly what a certain piece of the script
+  is doing.
+
+  Comments are also handy for adding in header and footer
+  information, like who made the script, copyright,
+  sources, any changes, etc..
+
+  If you were to try and run this script now you would
+  get an error saying group Start could not be found.
+  This is because this script is only composed of comments.
+*/
