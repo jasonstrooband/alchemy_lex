@@ -1,4 +1,8 @@
 <?php
+  // TODO: Write in comments for fields
+  // TODO: Add equal share line range
+  // TODO: Add expressions with math support and precedence
+
   ini_set('xdebug.var_display_max_depth', 10);
 
   $script_names = array_slice(scandir("./scripts"), 2);

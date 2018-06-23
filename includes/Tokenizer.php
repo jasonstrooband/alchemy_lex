@@ -8,11 +8,11 @@ class Tokenizer {
   );
   protected static $_terminals_special = array(
     "/\G([:;])/"                   => "T_GROUP_IDENTIFIER",
-    "/\G(?<=[:;])(\w+(?:\s\w+)?)/" => "T_GROUP_NAME",
+    "/\G(?<=^[:;])(\w+(?:\s\w+)?)/" => "T_GROUP_NAME",
     "/\G(\{)/"                     => "T_GROUP_OPEN_BRACKET",
     "/\G(\})/"                     => "T_GROUP_CLOSE_BRACKET",
-    "/\G(\d+\-\d+\,)/"             => "T_GROUP_LINE_RANGE_NUMBER",
-    "/\G(\d+\,)/"                  => "T_GROUP_LINE_SINGLE_NUMBER",
+    "/\G(\d+\-\d+\:)/"             => "T_GROUP_LINE_RANGE_NUMBER",
+    "/\G(\d+\:)/"                  => "T_GROUP_LINE_SINGLE_NUMBER",
     "/\G(\[)/"                     => "T_GROUPCALL_OPEN_BRACKET",
     "/\G(\])/"                     => "T_GROUPCALL_CLOSE_BRACKET",
     "/\G(\()/"                     => "T_EXPRESSION_OPEN_BRACKET",

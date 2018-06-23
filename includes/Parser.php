@@ -141,11 +141,11 @@ class Parser {
       case 'line':
         $close = 'T_NEWLINE';
         if($token['token'] == 'T_GROUP_LINE_SINGLE_NUMBER'){
-          $node['range'] = rtrim($token['value'], ',');
+          $node['range'] = rtrim($token['value'], ':');
         } else {
           $range = explode('-', $token['value']);
-          $node['range_min'] = rtrim($range[0], ',');
-          $node['range_max'] = rtrim($range[1], ',');
+          $node['range_min'] = rtrim($range[0], ':');
+          $node['range_max'] = rtrim($range[1], ':');
         }
         break;
       case 'groupcall':
