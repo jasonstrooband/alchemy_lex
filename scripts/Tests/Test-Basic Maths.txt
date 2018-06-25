@@ -1,0 +1,8 @@
+# Basic Test Script to test basic groups
+
+|Start {
+  :Basic Addition 1 + 2: (1+2)
+  #Basic Subtraction 2 - 1: (2-1), _
+  #Extended Addition 1 + 2 + 3: (1+2+3), _
+  #Extended Subtraction 4 - 2 - 1: (4-2-1)
+}

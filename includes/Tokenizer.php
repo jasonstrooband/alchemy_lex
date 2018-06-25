@@ -28,15 +28,12 @@ class Tokenizer {
   );
   protected static $_terminals_general = array(
     "/\G(\s*[a-zA-Z].*?)(?:[\[\]\(\)\_\r\n])/" => "T_STRING",
-    "/\G(\r)/"                               => "T_NEWLINE",
-    "/\G(\s+)/"                              => "T_WHITESPACE",
-    "/\G([\.\,\;\:\?\!\'\"\-\_\/])/"         => "T_PUNCTUATION",
-    "/\G([+-]?[0-9]*[.][0-9]+)/"             => "T_FLOAT",
-    "/\G(\d+)/"                              => "T_NUMBER",
-    "/\G(\-)/"                               => "T_DASH",
-    "/\G(\,)/"                               => "T_COMMA",
-    "/\G(\.)/"                               => "T_DOT",
-    "/\G(?<=[\[\(])(\w+)/"                   => "T_IDENTIFIER",
+    "/\G(\r)/"                                 => "T_NEWLINE",
+    "/\G(\s+)/"                                => "T_WHITESPACE",
+    "/\G([\.\,\;\:\?\!\'\"\-\_\/])/"           => "T_PUNCTUATION",
+    "/\G([+-]?[0-9]*[.][0-9]+)/"               => "T_FLOAT",
+    "/\G(\d+)/"                                => "T_NUMBER",
+    "/\G(?<=[\[\(])(\w+)/"                     => "T_IDENTIFIER",
   );
   protected static $_terminals = array();
 

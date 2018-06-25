@@ -31,10 +31,10 @@ class Emitter {
               $this->startFound = true;
               $this->evaluateGroup($ast[$x]);
             }
-          break;
-        default:
-          throw new Exception('Unable to evaluate type: ' . $ast[$x]['type']);
-          break;
+            break;
+          default:
+            throw new Exception('Unknown top level evaluation: ' . $ast[$x]['type']);
+            break;
         }
       }
       if($this->startFound == false) throw new Exception("Group 'Start not found");
@@ -63,6 +63,9 @@ class Emitter {
               throw new Exception('Cannot find group: ' . $ast[$x]['params'][0]['value']);
             }
           break;
+          case 'expression':
+            $this->evaluateExpression($ast[$x]);
+            break;
           default:
             throw new Exception('Unable to evaluate type: ' . $ast[$x]['type']);
             break;
@@ -153,5 +156,10 @@ class Emitter {
 
     $this->parent = 'group';
     $this->evaluate($groupAST['params'][$lineProg]['params']);
+  }
+
+  private function evaluateExpression($expressionAST){
+    pr($expressionAST);
+    throw new Exception("Expressions not yet ready");
   }
 }

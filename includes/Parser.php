@@ -1,6 +1,7 @@
 <?php
 class Parser {
   private $inComment = false;
+  private $inExpression = false;
   private $parseOutput = false;
   private $current = false;
   private $tokens;
@@ -46,7 +47,6 @@ class Parser {
       case 'T_GROUP_OPEN_BRACKET': // Used in group expression don't parse
       case 'T_GROUP_CLOSE_BRACKET': // Used in group expression don't parse
       case 'T_GROUPCALL_CLOSE_BRACKET': // Used in groupcall expression don't parse
-      case 'T_EXPRESSION_CLOSE_BRACKET': // Used in expression don't parse
         break;
       // Open comment block ignore all else till close block
       case 'T_BLOCKCOMMENT_OPEN':
@@ -77,10 +77,46 @@ class Parser {
       break;
       case 'T_NUMBER':
         if(!$this->inComment){
-          return array(
-            'type'  => 'number',
-            'value' => $token['value']
-          );
+          if(!$this->inExpression){
+            return array(
+              'type'  => 'number',
+              'value' => $token['value']
+            );
+          } else {
+            $nextToken = $this->peekNext();
+
+            if($nextToken['token'] == 'T_EXPRESSION_CLOSE_BRACKET'){
+              return array(
+                'type'  => 'number',
+                'value' => $token['value']
+              );
+            }
+
+            switch($nextToken['token']){
+              case 'T_MATH_ADDITION':
+                $this->current += 2;
+                $type = 'addition';
+
+                break;
+              case 'T_MATH_SUBTRACTION':
+                $this->current += 2;
+                $type = 'subtraction';
+                break;
+              default:
+                throw new Exception("Unknown operator token " . $nextToken['token'] . " at line " . $nextToken['line'] . "-" . $nextToken['offset']);
+                break;
+            }
+            return array(
+              'type'  => $type,
+              'params' => array(
+                'left' => array(
+                  'type'  => 'number',
+                  'value' => $token['value']
+                ),
+                'right' => $this->parseToken()
+              )
+            );
+          }
         }
       break;
       // Group Expression
@@ -97,7 +133,6 @@ class Parser {
       // After newline no more parsing content
       case 'T_NEWLINE':
         $this->parseOutput = false;
-        $this->inMultiline = false;
         break;
       // Group call Expression
       case 'T_GROUPCALL_OPEN_BRACKET':
@@ -105,7 +140,11 @@ class Parser {
         break;
       // Group call Expression
       case 'T_EXPRESSION_OPEN_BRACKET':
+        $this->inExpression = true;
         return $this->parseExpression('expression');
+        break;
+      case 'T_EXPRESSION_CLOSE_BRACKET':
+        $this->inExpression = false;
         break;
       case 'T_MATH_ADDITION':
       case 'T_MATH_SUBTRACTION':

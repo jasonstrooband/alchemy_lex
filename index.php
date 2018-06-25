@@ -4,8 +4,10 @@
   // TODO: Add error checking for equal share group type
   // TODO: Add error check for lines without a number range or single and not equal share group
   // TODO: Add error check for multiline to see if the next line is an output line
+  // TODO: Add error checking for strings outside of groups
+  // TODO: Add error checking for expressions outside of groups
 
-  ini_set('xdebug.var_display_max_depth', 10);
+  ini_set('xdebug.var_display_max_depth', -1);
   ini_set('xdebug.var_display_max_children', -1);
 
   $script_names = array_slice(scandir("./scripts"), 2);
@@ -20,6 +22,17 @@
     echo "<div style=;background-color:red;color:white;font-size:26px;padding:10px;margin:10px;>";
     print_r($msg);
     echo "</div>";
+  }
+
+  function pr($arr){
+    print "<pre>";
+    print_r($arr);
+    print "</pre>";
+  }
+  function vd($arr){
+    print "<pre>";
+    var_dump($arr);
+    print "</pre>";
   }
 
   function getScripts(){
