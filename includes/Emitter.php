@@ -5,6 +5,7 @@ class Emitter {
   private $parent = 'program';
   private $startFound = false;
   private $fullAST;
+  private $expressionResult = false;
 
   function __construct($ast){
     $this->fullAST = $ast['body'];
@@ -21,7 +22,9 @@ class Emitter {
   }
 
   private function evaluate($ast){
-    //var_dump($ast);
+    if(isset($ast['type']) && $ast['type'] == "binary"){
+      return $this->evaluateBinary($ast['operator'], $ast['left'], $ast['right']);
+    }
     if($this->parent == 'program' && $this->startFound == false){
       // Evaluate top level element
       for($x = 0; $x < count($ast); $x++){
@@ -45,6 +48,7 @@ class Emitter {
       // Evaluate lines
       for($x = 0; $x < count($ast); $x++){
         switch($ast[$x]['type']){
+          case 'number':
           case 'string':
             $this->output .= $ast[$x]['value'];
             break;
@@ -63,8 +67,8 @@ class Emitter {
               throw new Exception('Cannot find group: ' . $ast[$x]['params'][0]['value']);
             }
           break;
-          case 'expression':
-            $this->evaluateExpression($ast[$x]);
+          case 'binary':
+            $this->output .= $this->evaluateBinary($ast[$x]['operator'], $ast[$x]['left'], $ast[$x]['right']);
             break;
           default:
             throw new Exception('Unable to evaluate type: ' . $ast[$x]['type']);
@@ -158,8 +162,19 @@ class Emitter {
     $this->evaluate($groupAST['params'][$lineProg]['params']);
   }
 
-  private function evaluateExpression($expressionAST){
-    pr($expressionAST);
-    throw new Exception("Expressions not yet ready");
+  private function evaluateBinary($operator, $left, $right){
+    $left = ($left['type'] != 'number' ? $this->evaluate($left) : $left['value']);
+    $right = ($right['type'] != 'number' ? $this->evaluate($right) : $right['value']);
+
+    switch ($operator) {
+      case "+": return $left + $right;
+      case "-": return $left - $right;
+      case "*"  : return $left * $right;
+      // TODO: Add check to see if not dividing by 0
+      case "/"  : return $left / $right;
+      default:
+        throw new Exception('Binary operator currently not supported or unknown: ' . $operator);
+        break;
+    }
   }
 }

@@ -7,12 +7,12 @@ class Parser {
   private $tokens;
 
   private static $precedence = array(
-    "=" => 1,
+    "="  => 1,
     "||" => 2,
     "&&" => 3,
-    "<" => 7, ">" => 7, "<=" => 7, ">=" => 7, "==" => 7, "!=" => 7,
-    "+" => 10, "-" => 10,
-    "*" => 20, "/" => 20, "%" => 20,
+    "<"  => 7, ">" => 7, "<=" => 7, ">=" => 7, "==" => 7, "!=" => 7,
+    "+"  => 10, "-" => 10,
+    "*"  => 20, "/" => 20, "%" => 20,
   );
 
   public function __construct($tokens){
@@ -65,7 +65,7 @@ class Parser {
             'value' => $token['value']
           );
         }
-      break;
+        break;
       case 'T_WHITESPACE':
       case 'T_PUNCTUATION':
         if(!$this->inComment && $this->parseOutput){
@@ -74,61 +74,27 @@ class Parser {
             'value' => $token['value']
           );
         }
-      break;
+        break;
       case 'T_NUMBER':
+      case 'T_FLOAT':
         if(!$this->inComment){
-          if(!$this->inExpression){
-            return array(
-              'type'  => 'number',
-              'value' => $token['value']
-            );
-          } else {
-            $nextToken = $this->peekNext();
-
-            if($nextToken['token'] == 'T_EXPRESSION_CLOSE_BRACKET'){
-              return array(
-                'type'  => 'number',
-                'value' => $token['value']
-              );
-            }
-
-            switch($nextToken['token']){
-              case 'T_MATH_ADDITION':
-                $this->current += 2;
-                $type = 'addition';
-
-                break;
-              case 'T_MATH_SUBTRACTION':
-                $this->current += 2;
-                $type = 'subtraction';
-                break;
-              default:
-                throw new Exception("Unknown operator token " . $nextToken['token'] . " at line " . $nextToken['line'] . "-" . $nextToken['offset']);
-                break;
-            }
-            return array(
-              'type'  => $type,
-              'params' => array(
-                'left' => array(
-                  'type'  => 'number',
-                  'value' => $token['value']
-                ),
-                'right' => $this->parseToken()
-              )
-            );
-          }
+          return array(
+            'type'  => 'number',
+            'value' => $token['value']
+          );
         }
-      break;
+        break;
       // Group Expression
       case 'T_GROUP_IDENTIFIER':
-        return $this->parseExpression('group');
+        return $this->parseSubProgram('group');
         break;
       // Line expression
       case 'T_GROUP_LINE_SINGLE_NUMBER':
       case 'T_GROUP_LINE_RANGE_NUMBER':
       case 'T_GROUP_LINE_EQUAL_NUMBER':
         $this->parseOutput = true;
-        return $this->parseExpression('line');
+
+        return $this->parseSubProgram('line');
         break;
       // After newline no more parsing content
       case 'T_NEWLINE':
@@ -136,36 +102,38 @@ class Parser {
         break;
       // Group call Expression
       case 'T_GROUPCALL_OPEN_BRACKET':
-        return $this->parseExpression('groupcall');
+        return $this->parseSubProgram('groupcall');
         break;
       // Group call Expression
       case 'T_EXPRESSION_OPEN_BRACKET':
+        // TODO: May need expression depth var for recursive expressions
+        if($this->inExpression) throw new Exception("Recursive expressions not yet supported");
         $this->inExpression = true;
-        return $this->parseExpression('expression');
+        $this->current++;
+        return $this->parseExpression($this->parseToken(), 0);
         break;
       case 'T_EXPRESSION_CLOSE_BRACKET':
         $this->inExpression = false;
         break;
-      case 'T_MATH_ADDITION':
-      case 'T_MATH_SUBTRACTION':
-      case 'T_MATH_MULTIPLY':
-      case 'T_MATH_DIVISION':
-        //$this->maybeOperator($token, $this->peekPrevious(), 0);
-        break;
+      //case 'T_MATH_ADDITION':
+      //case 'T_MATH_SUBTRACTION':
+      //case 'T_MATH_MULTIPLY':
+      //case 'T_MATH_DIVISION':
+      //  break;
       // End of Script
       case 'T_EOF':
         return false;
         break;
       default:
         // Unknown token found
-        throw new Exception("Unknown token " . $token['token'] . " at line " . $token['line'] . "-" . $token['offset']);
+        throw new Exception("Parse Error: Unknown token " . $token['token'] . " at line " . $token['line'] . "-" . $token['offset']);
         break;
     }
 
     return true;
   }
 
-  protected function parseExpression($type){
+  protected function parseSubProgram($type){
     $token = $this->tokens[$this->current];
     $delimiter = '';
 
@@ -203,7 +171,7 @@ class Parser {
         break;
       default:
         // Unknown expression type
-        throw new Exception("Unknown expression '" . $type . "' at line " . $token['line'] . "-" . $token['offset']);
+        throw new Exception("Parse Error: Unknown expression '" . $type . "' at line " . $token['line'] . "-" . $token['offset']);
         break;
     }
 
@@ -212,7 +180,7 @@ class Parser {
     if(isset($close)){
       while(!($token['token'] === $close)){
         if($token['token'] == 'T_EOF'){
-          throw new Exception("Unexpected end of file, expected '" . $delimiter . "' - '" . $close . "'");
+          throw new Exception("Parse Error: Unexpected end of file, expected '" . $delimiter . "' - '" . $close . "'");
         }
         $this->current++;
         $token = $this->tokens[$this->current];
@@ -224,13 +192,34 @@ class Parser {
     return $node;
   }
 
-  protected function maybeOperator($token, $left, $lastPrecedence){
-    var_dump($left);
-    $thisPrecedence = static::$precedence[$token['value']];
-    var_dump($thisPrecedence);
-    if($thisPrecedence > $lastPrecedence) {
-      var_dump("Greater");
+  protected function parseExpression($left, $last_prec) {
+    // Peek for next token
+    $next_token = $this->peekNext();
+
+    // If the next token is an operator
+    if($this->isOp($next_token)){
+
+      // Get the operator precedence for the next token and the token value
+      $op_prec = $this->getPrecedence($next_token);
+      $op_val = $next_token['value'];
+
+      // If the next operator precedence is higher than the last precedence
+      if($op_prec > $last_prec){
+        // Advance to the next token
+        $this->current += 2;
+
+        // Construct the recursive binary tree
+        return $this->parseExpression(array(
+          "type" => "binary",
+          "operator" => $op_val,
+          "left" => $left,
+          "right" => $this->parseExpression($this->parseToken(), $op_prec)
+        ), $last_prec);
+      }
+
     }
+    // Not an operator just return the left value
+    return $left;
   }
 
   protected static function removeEmpty($tokens){
@@ -242,6 +231,24 @@ class Parser {
       }
     }
     return $tokensFormatted;
+  }
+
+  protected static function isOp($token){
+    $operators = array(
+      'T_MATH_ADDITION',
+      'T_MATH_SUBTRACTION',
+      'T_MATH_MULTIPLY',
+      'T_MATH_DIVISION',
+    );
+    return in_array($token['token'], $operators);
+  }
+
+  protected static function getPrecedence($token){
+    if(isset(Parser::$precedence[$token['value']])){
+      return Parser::$precedence[$token['value']];
+    } else {
+      throw new Exception("Parse Error: Precedence not found for '" . $token['token'] . "' - '" . $token['value'] . "'");
+    }
   }
 
   protected function peekPrevious($amount = 1){
