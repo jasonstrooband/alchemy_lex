@@ -17,7 +17,6 @@
       margin-bottom: 50px;
     }
     .col {
-      display: inline-block;
       width: 25%;
       float: left;
       overflow: auto;
@@ -31,6 +30,16 @@
     .greentext {
       color: green;
     }
+
+    dl { margin: 0; }
+
+    dt,dd {
+      display: list-item;
+      list-style-position: inside;
+    }
+
+    dt { list-style-type: disc; }
+    dd { list-style-type: circle; }
   </style>
 </head>
 
@@ -42,7 +51,7 @@
       <h1>Roadmap</h1>
 
       <div class="col">
-        <h2>V1</h2>
+        <h2>V1a</h2>
 
         <ul>
           <li class="greentext">Comments
@@ -71,20 +80,31 @@
               <li>Continue text from previous line</li>
             </ul>
           </li>
-          <li>Expressions (1 + 2 * 3) with precedence</li>
-          <li>Functions
+          <li class="greentext">MathExpressions (1 + 2 * 3) with precedence
             <ul>
-              <li>Syntax:{x~param1,param2,etc...}</li>
-              <li>Dice</li>
+              <li>Addition</li>
+              <li>Subtraction</li>
+              <li>Multiplication</li>
+              <li>Division</li>
+            </ul>
+          </li>
+          <li class="greentext">Functions
+            <dl>
+              <dt>Syntax:&ltx~param&gt</dt>
+              <dt>Cap</dt>
+              <dd>Used to capitalize the forst word in a string</dd>
+              <dt>Dice</dt>
+              <dd>Can use dice<strong>d</strong>sides 2d6 or <strong>d</strong>sides</dt> d6 format
             </ul>
           </li>
         </ul>
       </div>
 
       <div class="col">
-        <h2>V2</h2>
+        <h2>V2a</h2>
 
         <ul>
+          <li>Convert to JS - add reroll button</li>
           <li>Variables
             <ul>
               <li>Definition</li>
@@ -104,7 +124,7 @@
       </div>
 
       <div class="col">
-        <h2>V3</h2>
+        <h2>V3a</h2>
 
         <ul>
           <li>Lines Roll Conditionals</li>
@@ -117,10 +137,10 @@
       </div>
 
       <div class="col">
-        <h2>V4</h2>
+        <h2>V4a</h2>
 
         <ul>
-          <li>Unity Build</li>
+          <li>Unity Build??</li>
         </ul>
       </div>
     </div>

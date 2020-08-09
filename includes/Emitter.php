@@ -40,7 +40,7 @@ class Emitter {
             break;
         }
       }
-      if($this->startFound == false) throw new Exception("Group 'Start not found");
+      if($this->startFound == false) throw new Exception("Emitter  Error: Group 'Start not found");
       return true;
     }
 
@@ -67,11 +67,14 @@ class Emitter {
               throw new Exception('Cannot find group: ' . $ast[$x]['params'][0]['value']);
             }
           break;
+          case 'functioncall':
+            $this->output .= $this->evaluateFunction($ast[$x]);
+            break;
           case 'binary':
             $this->output .= $this->evaluateBinary($ast[$x]['operator'], $ast[$x]['left'], $ast[$x]['right']);
             break;
           default:
-            throw new Exception('Unable to evaluate type: ' . $ast[$x]['type']);
+            throw new Exception("Emitter Error: Unable to evaluate type: " . $ast[$x]['type']);
             break;
         }
       }
@@ -79,7 +82,7 @@ class Emitter {
       return true;
     }
 
-    throw new Exception('Unknown emitter evaluation parent: ' . $this->parent);
+    throw new Exception("Emitter Error: Unknown emitter evaluation parent: " . $this->parent);
   }
 
   private function evaluateGroup($groupAST){
@@ -88,7 +91,7 @@ class Emitter {
         $group_min = 1;
         $group_max = 0;
         foreach($groupAST['params'] as $k => $line){
-          if($line['range'] < 1) throw new Exception("Probability line number cannot be below 1 for group: " . $groupAST['name']);
+          if($line['range'] < 1) throw new Exception("Emitter Error: Probability line number cannot be below 1 for group: " . $groupAST['name']);
 
           if($line['range'] != 1){
             // Convert shares to ranges
@@ -116,18 +119,18 @@ class Emitter {
 
             // If it is the first line you don't ned to error check if the number is too low
             if($k != 0){
-              if($line_num_min <= $line_last) throw new Exception("Line number minimum range cannot be lower for group '" . $groupAST['name'] . "'");
-              if($line_num_max <= $line_last) throw new Exception("Line number maximum range cannot be lower for group '" . $groupAST['name'] . "'");
+              if($line_num_min <= $line_last) throw new Exception("Emitter Error: Line number minimum range cannot be lower for group '" . $groupAST['name'] . "'");
+              if($line_num_max <= $line_last) throw new Exception("Emitter Error: Line number maximum range cannot be lower for group '" . $groupAST['name'] . "'");
             }
-            if($line_num_min > ($line_last + 1)) throw new Exception("Line number min cannot be more than 1 higher than the last line number for group '" . $groupAST['name'] . "'");
-            //if($line_num_max > ($line_last + 2)) throw new Exception("Line number max cannot be more than 1 higher than the last line number for group '" . $groupAST['name'] . "'");
+            if($line_num_min > ($line_last + 1)) throw new Exception("Emitter Error: Line number min cannot be more than 1 higher than the last line number for group '" . $groupAST['name'] . "'");
+            //if($line_num_max > ($line_last + 2)) throw new Exception("Emitter Error: Line number max cannot be more than 1 higher than the last line number for group '" . $groupAST['name'] . "'");
             $group_max = $line_num_max;
           } else {
             $line_num = $line['range'];
 
-            if($line_num < $line_last) throw new Exception("Line number cannot be lower for group '" . $groupAST['name'] . "'");
-            if($line_num == $line_last && count($groupAST['params']) != 1 && $k > 0)throw new Exception("Line number cannot repeat for group '" . $groupAST['name'] . "'");
-            if($line_num > ($line_last + 1)) throw new Exception("Line number cannot be more than 1 higher than the last line number for group '" . $groupAST['name'] . "'");
+            if($line_num < $line_last) throw new Exception("Emitter Error: Line number cannot be lower for group '" . $groupAST['name'] . "'");
+            if($line_num == $line_last && count($groupAST['params']) != 1 && $k > 0)throw new Exception("Emitter Error: Line number cannot repeat for group '" . $groupAST['name'] . "'");
+            if($line_num > ($line_last + 1)) throw new Exception("Emitter Error: Line number cannot be more than 1 higher than the last line number for group '" . $groupAST['name'] . "'");
             $group_max = $line_num;
           }
           $line_last = $group_max;
@@ -138,7 +141,7 @@ class Emitter {
         $group_max = count($groupAST['params']);
         break;
       default:
-        throw new Exception("Unknown group type '" . $groupAST['value'] . "' for group '"  . $groupAST['name']);
+        throw new Exception("Emitter Error: Unknown group type '" . $groupAST['value'] . "' for group '"  . $groupAST['name']);
         break;
     }
 
@@ -156,10 +159,46 @@ class Emitter {
       }
     }
 
-    if(!isset($lineProg)) throw new Exception("Unknown error, line not selected for group: " . $groupAST['name']);
+    if(!isset($lineProg)) throw new Exception("Emitter Error: Unknown error, line not selected for group: " . $groupAST['name']);
 
     $this->parent = 'group';
     $this->evaluate($groupAST['params'][$lineProg]['params']);
+  }
+
+  private function evaluateFunction($ast){
+    if($ast['params'][0]['type'] != 'string') throw new Exception("Emitter Error: First parameter for function calls must be the function name string, type is: " . $ast['params'][0]['type']);
+    for($x = 0; $x < count($ast['params']); $x++){
+      if($ast['params'][$x]['value'] == '~'){
+        array_splice($ast['params'], $x, 1);
+      }
+    }
+    switch(strtolower($ast['params'][0]['value'])){
+      case 'cap':
+        return ucfirst($ast['params'][1]['value']);
+        break;
+      case 'dice':
+        if(count($ast['params']) < 2 || count($ast['params']) > 2) throw new Exception("Emitter Error: Dice function expects one parameter, found " . (count($ast['params'])-1));
+
+        if(preg_match('/(\d)*d(\d+)/', $ast['params'][1]['value'], $matches)){
+          array_splice($matches, 0, 1);
+
+          $dice = ($matches[0] == '' ? 1 : (int)$matches[0]);
+          $sides = (int)$matches[1];
+          $result = 0;
+
+          for($x = 0; $x < $dice; $x++){
+            $result += rand(1, $sides);
+          }
+          return $result;
+        } else {
+          throw new Exception("Emitter Error: Dice Function parameter 1 expect a dice format of xdx or dx where x is a number");
+        }
+
+        break;
+      default:
+        throw new Exception("Emitter Error: Function '" . $ast['params'][0]['value'] . "' does not exist");
+        break;
+    }
   }
 
   private function evaluateBinary($operator, $left, $right){
@@ -173,7 +212,7 @@ class Emitter {
       // TODO: Add check to see if not dividing by 0
       case "/"  : return $left / $right;
       default:
-        throw new Exception('Binary operator currently not supported or unknown: ' . $operator);
+        throw new Exception("Emitter Error: Binary operator currently not supported or unknown: " . $operator);
         break;
     }
   }

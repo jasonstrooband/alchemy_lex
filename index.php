@@ -86,6 +86,8 @@
       width: 25%;
       float: left;
       overflow: auto;
+      padding: 0 10px;
+      box-sizing: border-box;  
     }
 
     .pre {
@@ -127,7 +129,7 @@
 
       <div class="col">
         <h2>Input</h2>
-        <div class="pre"><?php echo $input ?></div>
+        <div class="pre"><?php echo htmlspecialchars($input) ?></div>
       </div>
       <div class="col">
         <h2>Tokens</h2>

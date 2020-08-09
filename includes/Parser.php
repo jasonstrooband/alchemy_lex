@@ -47,6 +47,7 @@ class Parser {
       case 'T_GROUP_OPEN_BRACKET': // Used in group expression don't parse
       case 'T_GROUP_CLOSE_BRACKET': // Used in group expression don't parse
       case 'T_GROUPCALL_CLOSE_BRACKET': // Used in groupcall expression don't parse
+      case 'T_FUNCTIONCALL_CLOSE_BRACKET': // Used in functioncall expression don't parse
         break;
       // Open comment block ignore all else till close block
       case 'T_BLOCKCOMMENT_OPEN':
@@ -120,6 +121,10 @@ class Parser {
       //case 'T_MATH_MULTIPLY':
       //case 'T_MATH_DIVISION':
       //  break;
+      // Group call Expression
+      case 'T_FUNCTIONCALL_OPEN_BRACKET':
+        return $this->parseSubProgram('functioncall');
+        break;
       // End of Script
       case 'T_EOF':
         return false;
@@ -168,6 +173,10 @@ class Parser {
       case 'expression':
         $close = 'T_EXPRESSION_CLOSE_BRACKET';
         $delimiter = ')';
+        break;
+      case 'functioncall':
+        $close = 'T_FUNCTIONCALL_CLOSE_BRACKET';
+        $delimiter = '>';
         break;
       default:
         // Unknown expression type

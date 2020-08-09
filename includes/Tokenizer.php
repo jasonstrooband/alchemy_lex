@@ -16,9 +16,10 @@ class Tokenizer {
     "/\G(\s+\:)/"                    => "T_GROUP_LINE_EQUAL_NUMBER",
     "/\G(\[)/"                       => "T_GROUPCALL_OPEN_BRACKET",
     "/\G(\])/"                       => "T_GROUPCALL_CLOSE_BRACKET",
+    "/\G(\<)/"                       => "T_FUNCTIONCALL_OPEN_BRACKET",
+    "/\G(\>)/"                       => "T_FUNCTIONCALL_CLOSE_BRACKET",
     "/\G(\()/"                       => "T_EXPRESSION_OPEN_BRACKET",
     "/\G(\))/"                       => "T_EXPRESSION_CLOSE_BRACKET",
-    //"/\G(\~)/"                       => "T_FUNCTION_SEPARATOR",
   );
   protected static $_terminals_math = array(
     "/\G(\+)/" => "T_MATH_ADDITION",
@@ -27,13 +28,15 @@ class Tokenizer {
     "/\G(\/)/" => "T_MATH_DIVISION",
   );
   protected static $_terminals_general = array(
-    "/\G(\s*[a-zA-Z].*?)(?:[\[\]\(\)\_\r\n])/" => "T_STRING",
-    "/\G(\r)/"                                 => "T_NEWLINE",
-    "/\G(\s+)/"                                => "T_WHITESPACE",
-    "/\G([\.\,\;\:\?\!\'\"\-\_\/])/"           => "T_PUNCTUATION",
-    "/\G([+-]?[0-9]*[.][0-9]+)/"               => "T_FLOAT",
-    "/\G(\d+)/"                                => "T_NUMBER",
-    "/\G(?<=[\[\(])(\w+)/"                     => "T_IDENTIFIER",
+    //"/\G(\b[a-zA-Z0-9\s]+\b)/"         => "T_STRING",
+    "/\G(\r)/"                         => "T_NEWLINE",
+    "/\G(\s+)/"                        => "T_WHITESPACE",
+    "/\G([\.\,\;\:\?\!\'\"\-\_\/\~])/" => "T_PUNCTUATION",
+    "/\G([+-]?[0-9]*[.][0-9]+)/"       => "T_FLOAT",
+    "/\G(\d+)/"                        => "T_NUMBER",
+    //"/\G(?<=[\[\(])(\w+)/"             => "T_IDENTIFIER",
+    //"/\G(\b.+?(?=[\(<[]))/"            => "T_STRING",
+    "/\G(\b.+?(?=[\(\<\>\[\]\r\n\~]))/"    => "T_STRING",
   );
   protected static $_terminals = array();
 
@@ -94,7 +97,7 @@ class Tokenizer {
       }
     }
 
-    throw new Exception("Unable to tokenize line at " . ($number + 1) . "-" . ($this->offset + 1) . ". " . json_encode($string));
+    throw new Exception("Tokenizer Error: Unable to tokenize line at " . ($number + 1) . "-" . ($this->offset + 1) . ". " . json_encode($string));
   }
 
   protected function applyMultiline($str){
