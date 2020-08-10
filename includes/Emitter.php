@@ -166,39 +166,37 @@ class Emitter {
   }
 
   private function evaluateFunction($ast){
-    if($ast['params'][0]['type'] != 'string') throw new Exception("Emitter Error: First parameter for function calls must be the function name string, type is: " . $ast['params'][0]['type']);
-    for($x = 0; $x < count($ast['params']); $x++){
-      if($ast['params'][$x]['value'] == '~'){
-        array_splice($ast['params'], $x, 1);
-      }
-    }
-    switch(strtolower($ast['params'][0]['value'])){
+    $functionName = $ast['value'];
+
+    switch(strtolower($functionName)){
       case 'cap':
-        return ucfirst($ast['params'][1]['value']);
+        if(count($ast['params']) > 1) throw new Exception("Emitter Error: Cap function expects one parameter, found " . (count($ast['params'])));
+        return ucfirst($ast['params'][0]);
         break;
       case 'dice':
-        if(count($ast['params']) < 2 || count($ast['params']) > 2) throw new Exception("Emitter Error: Dice function expects one parameter, found " . (count($ast['params'])-1));
-
-        if(preg_match('/(\d)*d(\d+)/', $ast['params'][1]['value'], $matches)){
+        $output = '';
+        for ($i=0; $i < count($ast['params']); $i++) {
+          $currentParam = $ast['params'][$i];
+          if(preg_match('/(\d+)*d(\d+)/', $currentParam, $matches)) {}
           array_splice($matches, 0, 1);
-
           $dice = ($matches[0] == '' ? 1 : (int)$matches[0]);
           $sides = (int)$matches[1];
           $result = 0;
-
+         
           for($x = 0; $x < $dice; $x++){
             $result += rand(1, $sides);
           }
-          return $result;
-        } else {
-          throw new Exception("Emitter Error: Dice Function parameter 1 expect a dice format of xdx or dx where x is a number");
-        }
 
+          $output .= $result . ', ';
+        }
+        $output = trim($output);
+        return $output;
         break;
       default:
-        throw new Exception("Emitter Error: Function '" . $ast['params'][0]['value'] . "' does not exist");
+        throw new Exception("Emitter Error: Function '" . $functionName . "' does not exist");
         break;
     }
+    throw new Exception("Emitter Error: No return value found for function '" . $functionName . "'");
   }
 
   private function evaluateBinary($operator, $left, $right){

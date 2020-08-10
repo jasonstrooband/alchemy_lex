@@ -133,15 +133,15 @@
       </div>
       <div class="col">
         <h2>Tokens</h2>
-        <div class="pre"><?php var_dump($tokens->output) ?></div>
+        <div class="pre"><?php (isset($tokens) ? var_dump($tokens->output) : '') ?></div>
       </div>
       <div class="col">
         <h2>AST</h2>
-        <div class="pre"><?php var_dump($ast->output) ?></div>
+        <div class="pre"><?php (isset($ast) ? var_dump($ast->output) : '') ?></div>
       </div>
       <div class="col">
         <h2>Emitter</h2>
-        <div class="pre"><?php var_dump($emitter->output) ?></div>
+        <div class="pre"><?php (isset($emitter) ? var_dump($emitter->output) : '') ?></div>
       </div>
     </div>
 

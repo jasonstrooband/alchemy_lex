@@ -38,8 +38,12 @@ class Parser {
     $this->output = $ast;
   }
 
-  protected function parseToken(){
-    $token = $this->tokens[$this->current];
+  protected function parseToken($setToken = null){
+    if($setToken != null) {
+      $token = $setToken;
+    } else {
+      $token = $this->tokens[$this->current];
+    }
     switch($token['token']){
       // Ignore
       case 'T_LINECOMMENT': // Ignore all comments
@@ -87,7 +91,7 @@ class Parser {
         break;
       // Group Expression
       case 'T_GROUP_IDENTIFIER':
-        return $this->parseSubProgram('group');
+        return $this->parseDelimSubProgram('group');
         break;
       // Line expression
       case 'T_GROUP_LINE_SINGLE_NUMBER':
@@ -95,15 +99,20 @@ class Parser {
       case 'T_GROUP_LINE_EQUAL_NUMBER':
         $this->parseOutput = true;
 
-        return $this->parseSubProgram('line');
+        return $this->parseDelimSubProgram('line');
         break;
       // After newline no more parsing content
       case 'T_NEWLINE':
         $this->parseOutput = false;
         break;
       // Group call Expression
+      case 'T_GROUPCALL':
+        return $this->parseEnclosedSubProgram('groupcall');
+        break;
+      // Group call Expression
+      // Depracated
       case 'T_GROUPCALL_OPEN_BRACKET':
-        return $this->parseSubProgram('groupcall');
+        return $this->parseDelimSubProgram('groupcall');
         break;
       // Group call Expression
       case 'T_EXPRESSION_OPEN_BRACKET':
@@ -116,14 +125,14 @@ class Parser {
       case 'T_EXPRESSION_CLOSE_BRACKET':
         $this->inExpression = false;
         break;
-      //case 'T_MATH_ADDITION':
-      //case 'T_MATH_SUBTRACTION':
-      //case 'T_MATH_MULTIPLY':
-      //case 'T_MATH_DIVISION':
-      //  break;
-      // Group call Expression
+      // Function call Expression
+      case 'T_FUNCTIONCALL':
+        return $this->parseEnclosedSubProgram('functioncall');
+        break;
+      // Function call Expression
+      // Depracated
       case 'T_FUNCTIONCALL_OPEN_BRACKET':
-        return $this->parseSubProgram('functioncall');
+        return $this->parseDelimSubProgram('functioncall');
         break;
       // End of Script
       case 'T_EOF':
@@ -137,8 +146,50 @@ class Parser {
 
     return true;
   }
+  protected function parseEnclosedSubProgram($type){
+    $token = $this->tokens[$this->current];
 
-  protected function parseSubProgram($type){
+    $node = array();
+    $node['type'] = $type;
+
+    switch($type){
+      case 'groupcall':
+        // Strip surrounding brackets
+        $value = substr($token['value'], 1, -1);
+        // Create child array token
+        $tempToken = array(
+          'token' => 'T_STRING',
+          'value' => $value,
+          'line' => $token['line'],
+          'offset' => $token['offset']++
+        );
+        // Return ast from child token and assign to the parent node
+        $param = Parser::parseToken($tempToken);
+        $node['params'] = array($param);
+        break;
+      case 'functioncall':
+        // Strip surrounding brackets
+        $value = substr($token['value'], 1, -1);
+        $value = preg_split('@~@', $value, NULL, PREG_SPLIT_NO_EMPTY);
+        if(count($value) == 1) throw new Exception("Parse Error: Function withhout any parameters - '" . $value[0] . "' at line " . $token['line'] . "-" . ($token['offset'] + 1));
+        $node['value'] = $value[0];
+        $params = preg_split('@,@', $value[1], NULL, PREG_SPLIT_NO_EMPTY);
+        $paramsNodes = array();
+        for($x = 0; $x < count($params); $x++){
+          $paramsNodes[] = $params[$x];
+        }
+        $node['params'] = $paramsNodes;
+      break;
+      default:
+        // Unknown expression type
+        throw new Exception("Parse Error: Unknown expression '" . $type . "' at line " . $token['line'] . "-" . $token['offset']);
+        break;
+    }
+
+    return $node;
+  }
+
+  protected function parseDelimSubProgram($type){
     $token = $this->tokens[$this->current];
     $delimiter = '';
 

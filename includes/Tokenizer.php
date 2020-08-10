@@ -14,12 +14,15 @@ class Tokenizer {
     "/\G(\d+\-\d+\:)/"               => "T_GROUP_LINE_RANGE_NUMBER",
     "/\G(\d+\:)/"                    => "T_GROUP_LINE_SINGLE_NUMBER",
     "/\G(\s+\:)/"                    => "T_GROUP_LINE_EQUAL_NUMBER",
-    "/\G(\[)/"                       => "T_GROUPCALL_OPEN_BRACKET",
-    "/\G(\])/"                       => "T_GROUPCALL_CLOSE_BRACKET",
-    "/\G(\<)/"                       => "T_FUNCTIONCALL_OPEN_BRACKET",
-    "/\G(\>)/"                       => "T_FUNCTIONCALL_CLOSE_BRACKET",
-    "/\G(\()/"                       => "T_EXPRESSION_OPEN_BRACKET",
-    "/\G(\))/"                       => "T_EXPRESSION_CLOSE_BRACKET",
+    "/\G(\[.*?\])/"                  => "T_GROUPCALL",
+    //"/\G(\[)/"                     => "T_GROUPCALL_OPEN_BRACKET",
+    //"/\G(\])/"                     => "T_GROUPCALL_CLOSE_BRACKET",
+    "/\G(\<.*?\>)/"                  => "T_FUNCTIONCALL",
+    //"/\G(\<)/"                     => "T_FUNCTIONCALL_OPEN_BRACKET",
+    //"/\G(\>)/"                     => "T_FUNCTIONCALL_CLOSE_BRACKET",
+    "/\G(\(.*?\))/"                  => "T_EXPRESSION",
+    //"/\G(\()/"                     => "T_EXPRESSION_OPEN_BRACKET",
+    //"/\G(\))/"                     => "T_EXPRESSION_CLOSE_BRACKET",
   );
   protected static $_terminals_math = array(
     "/\G(\+)/" => "T_MATH_ADDITION",
@@ -29,14 +32,14 @@ class Tokenizer {
   );
   protected static $_terminals_general = array(
     //"/\G(\b[a-zA-Z0-9\s]+\b)/"         => "T_STRING",
-    "/\G(\r)/"                         => "T_NEWLINE",
-    "/\G(\s+)/"                        => "T_WHITESPACE",
-    "/\G([\.\,\;\:\?\!\'\"\-\_\/\~])/" => "T_PUNCTUATION",
-    "/\G([+-]?[0-9]*[.][0-9]+)/"       => "T_FLOAT",
-    "/\G(\d+)/"                        => "T_NUMBER",
+    "/\G(\r)/"                           => "T_NEWLINE",
+    "/\G(\s+)/"                          => "T_WHITESPACE",
+    "/\G([\.\,\;\:\?\!\'\"\-\_\/\~])/"   => "T_PUNCTUATION",
+    "/\G([+-]?[0-9]*[.][0-9]+)/"         => "T_FLOAT",
+    "/\G(\d+)/"                          => "T_NUMBER",
     //"/\G(?<=[\[\(])(\w+)/"             => "T_IDENTIFIER",
     //"/\G(\b.+?(?=[\(<[]))/"            => "T_STRING",
-    "/\G(\b.+?(?=[\(\<\>\[\]\r\n\~]))/"    => "T_STRING",
+    "/\G(\b.+?(?=[\(\<\>\[\]\r\n\~]))/"  => "T_STRING",
   );
   protected static $_terminals = array();
 

@@ -32,11 +32,35 @@ Me, Jason S
 
 ## Version History
 
-* V2a
-  * Development
-* V1a
-  * First alpha release
-  * Very basic functionality abd proof of concept
+### V2a
+
+`Under Development`
+
+### V1a
+
+The first alpha release and a proof of concept of some basic functionality
+
+  - [Comments](https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap#Comments)
+	 - Line Comments
+	 - Block Comments
+ - [Basic Group Calls](https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap#Group-Calls)
+ - [Group Headings](https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap#Groups)
+	 - Sequential Group
+	 - Probability Group
+ - [Lines Roll](https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap#Group-Entries)
+	 - Equal Share
+	 - Single Share
+	 - Range Share
+ - [Multiline](https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap#Group-Entries)
+ - [Maths Expressions with order of precedence](https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap#Expressions)
+	 - Addition
+	 - Subtraction
+	 - Multiplication
+	 - Division
+ - [Sample Functions](https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap#Functions-Feature)
+	 - Syntax:<x~param>
+	 - Cap
+	 - Dice
 
 ## License
 
