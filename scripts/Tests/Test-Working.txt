@@ -1,3 +1,5 @@
+(testVar="test's")
+
 |Start {
-  :Test group <Cap~hello>
+  :Test (testVar2=2)(testVar2)-(testVar+2+3)
 }

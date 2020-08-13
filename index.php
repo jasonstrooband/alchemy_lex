@@ -54,14 +54,31 @@
     return $listingsSorted;
   }
 
+  function addLineNum($input) {
+    // TODO: Change line nums to not interfere with indentaion of the script
+    $input = explode("\n", $input);
+    //$count = count($input);
+    //$indent = strlen((string)$count);
+    for ($i=0; $i < count($input); $i++) {
+      //$temp = $i - $indent;
+      //var_dump(strlen((string)abs($temp)));
+      $input[$i] = ($i+1) . ":  " . $input[$i];
+    }
+    $input = implode("\n", $input);
+    return $input;
+  }
+
   if(!isset($_GET['script']) || $_GET['script'] == ''){
     $input = file_get_contents('./scripts/Tests/Test-Basic.txt', true);
   } else {
     $input = file_get_contents('./scripts/' . $_GET['script'] . '.txt', true);
   }
+  // At start of script
+  $time_start = microtime(true); 
   $tokens = new Tokenizer($input);
   $ast = new Parser($tokens->output);
   $emitter = new Emitter($ast->output);
+  echo 'Total execution time in seconds: ' . (microtime(true) - $time_start);
 
 ?><!DOCTYPE html>
 <html lang="en">
@@ -76,18 +93,13 @@
   <!--<script src="http://code.jquery.com/jquery-latest.min.js"></script>-->
   <style>
     .row {
+      display: flex;
       width: 100%;
-      clear: both;
-      float: left;
       margin-bottom: 50px;
     }
     .col {
-      display: inline-block;
-      width: 25%;
-      float: left;
       overflow: auto;
       padding: 0 10px;
-      box-sizing: border-box;  
     }
 
     .pre {
@@ -101,7 +113,7 @@
 
   <div class="container">
 
-    <a href="./roadmap.html">Roadmap</a> - <a href="./features.html">Features</a>
+    <a href="https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap">Features and Roadmap</a> - <a href="<?php echo $_SERVER['REQUEST_URI'] . '&debug'; ?>">Debug</a>
 
     <form id="script-changer" action="" method="get">
 
@@ -123,27 +135,30 @@
       </select>
       <input type="submit" value="Go" id="submit" />
     </form>
+    
+    <h1>Generator</h1>
+    <div class="pre"><?php echo (isset($emitter) ? $emitter->output : '') ?></div>
 
-    <div class="row">
-      <h1>Generator</h1>
-
-      <div class="col">
-        <h2>Input</h2>
-        <div class="pre"><?php echo htmlspecialchars($input) ?></div>
+      <div class="row">
+        <div class="col">
+          <h2>Input</h2>
+          <div class="pre"><?php echo htmlspecialchars(addLineNum($input)) ?></div>
+        </div>
+        <?php if(isset($_GET['debug'])) { ?>
+          <div class="col">
+            <h2>Tokens</h2>
+            <div class="pre"><?php (isset($tokens) ? var_dump($tokens->output) : '') ?></div>
+          </div>
+          <div class="col">
+            <h2>AST</h2>
+            <div class="pre"><?php (isset($ast) ? var_dump($ast->output) : '') ?></div>
+          </div>
+          <div class="col">
+            <h2>Emitter</h2>
+            <div class="pre"><?php (isset($emitter) ? var_dump($emitter->output) : '') ?></div>
+          </div>
+        <?php } ?>
       </div>
-      <div class="col">
-        <h2>Tokens</h2>
-        <div class="pre"><?php (isset($tokens) ? var_dump($tokens->output) : '') ?></div>
-      </div>
-      <div class="col">
-        <h2>AST</h2>
-        <div class="pre"><?php (isset($ast) ? var_dump($ast->output) : '') ?></div>
-      </div>
-      <div class="col">
-        <h2>Emitter</h2>
-        <div class="pre"><?php (isset($emitter) ? var_dump($emitter->output) : '') ?></div>
-      </div>
-    </div>
 
   </div>
 </body>

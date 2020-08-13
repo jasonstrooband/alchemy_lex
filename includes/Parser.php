@@ -64,11 +64,26 @@ class Parser {
       // If not in a comment return the AST
       case 'T_COMMA':
       case 'T_STRING':
-        if(!$this->inComment){
+      //Math tokens not inside an expression should bre treated like a string
+      case 'T_MATH_ADDITION':
+      case 'T_MATH_SUBTRACTION':
+      case 'T_MATH_MULTIPLY':
+      case 'T_MATH_DIVISION':
+      case 'T_MATH_POWER':
+      case 'T_MATH_EQUALS':
+        $strCheck = '""' == substr($token['value'], 0, 1) . substr($token['value'], -1, 1);
+        if($this->inExpression && !$strCheck){
           return array(
-            'type'  => 'string',
+            'type'  => 'variable',
             'value' => $token['value']
           );
+        } else {
+          if(!$this->inComment){
+            return array(
+              'type'  => 'string',
+              'value' => $token['value']
+            );
+          }
         }
         break;
       case 'T_WHITESPACE':
@@ -120,7 +135,11 @@ class Parser {
         if($this->inExpression) throw new Exception("Recursive expressions not yet supported");
         $this->inExpression = true;
         $this->current++;
-        return $this->parseExpression($this->parseToken(), 0);
+        
+        return array(
+          'type'  => 'expression',
+          'params' => $this->parseExpression($this->parseToken(), 0)
+        );
         break;
       case 'T_EXPRESSION_CLOSE_BRACKET':
         $this->inExpression = false;
@@ -196,6 +215,8 @@ class Parser {
     $node = array();
     $node['type'] = $type;
 
+    $open = $token['line'] . "-" . $token['offset'];
+
     switch($type){
       case 'group':
         $close = 'T_GROUP_CLOSE_BRACKET';
@@ -240,13 +261,14 @@ class Parser {
     if(isset($close)){
       while(!($token['token'] === $close)){
         if($token['token'] == 'T_EOF'){
-          throw new Exception("Parse Error: Unexpected end of file, expected '" . $delimiter . "' - '" . $close . "'");
+          throw new Exception("Parse Error: Unexpected end of file, expected '" . $delimiter . "' - '" . $close . "' - Start at: " . $open);
         }
         $this->current++;
         $token = $this->tokens[$this->current];
         $param = Parser::parseToken();
         if(gettype($param) !== 'boolean') $node['params'][] = $param;
       }
+      $open = '';
     }
 
     return $node;
@@ -269,8 +291,23 @@ class Parser {
         $this->current += 2;
 
         // Construct the recursive binary tree
+        switch($op_val){
+          case '=':
+            $expressionType = 'assign';
+            break;
+          case '+':
+          case '-':
+          case '*':
+          case '/':
+            $expressionType = 'binary';
+            break;
+          default:
+            throw new Exception("Parse Error: Unknown operator '" . $op_val . "'");
+            break;
+        }
+        
         return $this->parseExpression(array(
-          "type" => "binary",
+          "type" => $expressionType,
           "operator" => $op_val,
           "left" => $left,
           "right" => $this->parseExpression($this->parseToken(), $op_prec)
@@ -299,6 +336,8 @@ class Parser {
       'T_MATH_SUBTRACTION',
       'T_MATH_MULTIPLY',
       'T_MATH_DIVISION',
+      'T_MATH_POWER',
+      'T_MATH_EQUALS',
     );
     return in_array($token['token'], $operators);
   }

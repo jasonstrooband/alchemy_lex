@@ -1,9 +1,9 @@
 # Basic Test Script to test basic groups
 
 |Start {
-  :Addition 1 + 2 + 3: (1+2+3), _
-  Subtraction 4 - 2 - 1: (4-2-1), _
-  Multiplication 1.5 * 2: (1.5*2), _
-  Division 6 / 2: (6/2), _
-  Mixed: (6+1*2/4+8-22+248/2)
+  :Addition 1 + 2 + 3 = (1+2+3), _
+  Subtraction 4 - 2 - 1 = (4-2-1), _
+  Multiplication 1.5 * 2 = (1.5*2), _
+  Division 6 / 2 = (6/2), _
+  Mixed 6 + 1 * 2 / 4 + 8 - 22 + 248 / 2 = (6+1*2/4+8-22+248/2)
 }

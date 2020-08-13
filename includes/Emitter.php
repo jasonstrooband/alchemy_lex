@@ -6,6 +6,7 @@ class Emitter {
   private $startFound = false;
   private $fullAST;
   private $expressionResult = false;
+  private $scriptVariables = array();
 
   function __construct($ast){
     $this->fullAST = $ast['body'];
@@ -29,6 +30,9 @@ class Emitter {
       // Evaluate top level element
       for($x = 0; $x < count($ast); $x++){
         switch($ast[$x]['type']){
+          case 'expression':
+            $this->evaluateExpression($ast[$x]['params']);
+            break;
           case 'group':
             if(strtolower($ast[$x]['name']) == 'start'){
               $this->startFound = true;
@@ -47,6 +51,9 @@ class Emitter {
     if($this->parent == 'group'){
       // Evaluate lines
       for($x = 0; $x < count($ast); $x++){
+        if(!isset($ast[$x]['type'])) {
+          throw new Exception('Emitter Error: out of range ast');
+        }
         switch($ast[$x]['type']){
           case 'number':
           case 'string':
@@ -70,9 +77,12 @@ class Emitter {
           case 'functioncall':
             $this->output .= $this->evaluateFunction($ast[$x]);
             break;
-          case 'binary':
-            $this->output .= $this->evaluateBinary($ast[$x]['operator'], $ast[$x]['left'], $ast[$x]['right']);
+          case 'expression':
+            $this->output .= $this->evaluateExpression($ast[$x]['params']);
             break;
+          //case 'binary':
+          //  $this->output .= $this->evaluateBinary($ast[$x]['operator'], $ast[$x]['left'], $ast[$x]['right']);
+          //  break;
           default:
             throw new Exception("Emitter Error: Unable to evaluate type: " . $ast[$x]['type']);
             break;
@@ -199,19 +209,95 @@ class Emitter {
     throw new Exception("Emitter Error: No return value found for function '" . $functionName . "'");
   }
 
+  private function evaluateExpression($ast) {
+    $expressionOutput = '';
+    //var_dump($ast);
+    switch($ast['type']){
+        case 'assign':
+          if($ast['left']['type'] != 'variable') throw new Exception("Emitter Error: Cannot assign to '". $ast['left']['type'] . "'");
+          $this->scriptVariables[$ast['left']['value']] = $this->evaluateExpression($ast['right']);
+          //var_dump($this->scriptVariables);
+          break;
+        case 'binary':
+          $expressionOutput = $this->evaluateBinary($ast['operator'], $ast['left'], $ast['right']);
+          break;
+        case 'variable':
+          $expressionOutput = $this->renderVar($ast['value']);
+          break;
+        case 'number':
+          $expressionOutput = $ast['value'];
+          break;
+        case 'string':
+          $expressionOutput = substr($ast['value'], 1, -1);
+          break;
+      default:
+          var_dump($ast);
+        throw new Exception("Emitter Error: Unable to evaluate expression type: " . $ast['type']);
+        break;
+    }
+
+    return $expressionOutput;
+  }
+
   private function evaluateBinary($operator, $left, $right){
-    $left = ($left['type'] != 'number' ? $this->evaluate($left) : $left['value']);
-    $right = ($right['type'] != 'number' ? $this->evaluate($right) : $right['value']);
+    $left = $this->resolveExpressionType($left);
+    $right = $this->resolveExpressionType($right);
+    //$left = ($left['type'] != 'number' ? $this->renderVar($left['value']) : $left['value']);
+    //$right = ($right['type'] != 'number' ? $this->renderVar($right['value']) : $right['value']);
+
+    //var_dump($left);
+    //var_dump($operator);
+    //var_dump($right);
 
     switch ($operator) {
-      case "+": return $left + $right;
+      case "-":
+      case "*":
+      case "/":
+        if(!is_numeric($left) || !is_numeric($right)){
+          throw new Exception("Emitter Error: Cannot " . $operator . " a string");
+        }
+        break;
+    }
+
+    switch ($operator) {
+      case "+":
+        if(is_numeric($left) && is_numeric($right)){
+          return $left + $right;
+        } else {
+          return $left . $right;
+        }
       case "-": return $left - $right;
-      case "*"  : return $left * $right;
+      case "*": return $left * $right;
       // TODO: Add check to see if not dividing by 0
-      case "/"  : return $left / $right;
+      case "/": return $left / $right;
       default:
         throw new Exception("Emitter Error: Binary operator currently not supported or unknown: " . $operator);
         break;
+    }
+  }
+  
+  private function resolveExpressionType($subExpr) {
+    switch($subExpr['type']){
+      case 'number':
+        return $subExpr['value'];
+        break;
+      case 'variable':
+        return $this->renderVar($subExpr['value']);
+        break;
+      case 'binary':
+        return $this->evaluate($subExpr);
+        break;
+      default:
+      throw new Exception("Emitter Error: Unknown expression type: " . $subExpr['type']);
+    break;
+    }
+  }
+  
+  private function renderVar($renderVar){
+    if(array_key_exists($renderVar, $this->scriptVariables)) {
+      return $this->scriptVariables[$renderVar];
+    } else {
+      throw new Exception("Emitter Error: Variable not declared: " . $renderVar);
     }
   }
 }

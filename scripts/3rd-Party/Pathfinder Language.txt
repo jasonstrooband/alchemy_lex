@@ -1,0 +1,100 @@
+# https://paizo.com/threads/rzs2ofdc?Pathfinder-Tables-for-TableSmith
+# Generates languages with leaning to Human, Dwarven, and Elven
+;Start {
+  40:[Language Common]
+  2:[Language Ancient]
+  9:dwarven
+  9:elven
+  5:orc
+  4:gnome
+  4:goblin
+  4:undercommon
+  3:draconic
+  3:abyssal
+  3:halfling
+  3:infernal
+  2:celestial
+  2:sylvan
+  1:aquan
+  1:auran
+  1:druidic
+  1:giant
+  1:gnoll
+  1:ignan
+  1:terran
+}
+
+# Generates modern languages from common or exotic tongues
+# Osiriani is the most common language of Garund
+# Hallit is almost never written, Tien and Shadowtounge are rare
+;Language Common {
+  5:[Language Exotic]
+  45:Taldane
+  7:Osiriani
+  5:Kelish
+  5:Polyglot
+  5:Shoanti
+  5:Skald
+  5:Varisian
+  5:Vudrani
+  3:Hallit
+  3:Tien
+  2:Shadowtongue
+  1:Orvian
+}
+
+# Languages taken from Dragon Empires Gazetteer, the Beastiaries,
+# and Into the Darklands. Languages with no written component
+# were dropped. Draconic and Celestial with the prefix Tien to
+# denote Dragon Empires languages. The prefix Darklands was
+# added to denote Darklands sources.
+;Language Exotic {
+  4:Dtang
+  2:Hon-La
+  5:Hwan
+  3:Minatan
+  6:Minkaian
+  3:Senzar
+  7:Tien
+  2:Nagaji
+  2:Samsaran
+  2:Tengu
+  2:Wayang
+  2:Tien Draconic
+  2:Darklands Dwarven
+  2:Darklands Elven
+  2:Aboleth
+  1:Boggard
+  1:Tien Celestial
+  1:Cyclops
+  1:Dark Folk
+  1:D'ziriak
+  1:Grippli
+  1:Sphinx
+  1:Treant
+}
+
+# Generates lost tongues and ancient languages "Ancient"
+# Dwarven, Elven, Draconic, and Serpentfolk are simply made up
+# to add variety and re-add languages that have been around more
+# than 10,000 years. Likewise, Abyssal, Infernal, and Celestial
+# were active languages. Old Kelesh and Old Taldane are
+# inventions to give flavor for things 2,000-5,000 years old.
+;Language Ancient {
+  15:Ancient Osiriani
+  15:Jistka
+  12:Azlanti
+  10:Tekritanin
+  10:Thassilonian
+  8:Ancient Cyclops
+  5:Ancient Elven
+  5:Ancient Dwarven
+  5:Ancient Draconic
+  3:Abyssal
+  3:Infernal
+  3:Celestial
+  3:Old Kelesh
+  3:Old Taldane
+  2:Orvian
+  2:Ancient Serpentfolk
+}
