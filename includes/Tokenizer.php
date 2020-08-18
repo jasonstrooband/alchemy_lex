@@ -2,22 +2,20 @@
 
 class Tokenizer {
   protected static $_terminals_comments = array(
-    "/\G(#.+)/"  => "T_LINECOMMENT",
-    "/\G(\/\*)/" => "T_BLOCKCOMMENT_OPEN",
-    "/\G(\*\/)/" => "T_BLOCKCOMMENT_CLOSE",
+    "/\G(#.*?)(?=\r|\n|\r\n)/"  => "T_LINECOMMENT",
+    "/\G(\/\*)/"                => "T_BLOCKCOMMENT_OPEN",
+    "/\G(\*\/)/"                => "T_BLOCKCOMMENT_CLOSE",
   );
   protected static $_terminals_special = array(
     "/\G([:;|])/"                    => "T_GROUP_IDENTIFIER",
     "/\G(?<=^[:;|])(\w+(?:\h\w+)?)/" => "T_GROUP_NAME",
-    "/\G(\{)/"                       => "T_GROUP_OPEN_BRACKET",
-    "/\G(\})/"                       => "T_GROUP_CLOSE_BRACKET",
-    "/\G(\d+\-\d+\:)/"               => "T_GROUP_LINE_RANGE_NUMBER",
-    "/\G(\d+\:)/"                    => "T_GROUP_LINE_SINGLE_NUMBER",
-    "/\G(\h+\:)/"                    => "T_GROUP_LINE_EQUAL_NUMBER",
+    "/\G(\d+\-\d+\,)/"               => "T_GROUP_LINE_RANGE_NUMBER",
+    "/\G(\d+\,)/"                    => "T_GROUP_LINE_SINGLE_NUMBER",
+    "/\G(\h+\,)/"                    => "T_GROUP_LINE_EQUAL_NUMBER",
     "/\G(\[.*?\])/"                  => "T_GROUPCALL",
     //"/\G(\[)/"                     => "T_GROUPCALL_OPEN_BRACKET",
     //"/\G(\])/"                     => "T_GROUPCALL_CLOSE_BRACKET",
-    "/\G(\<.*?\>)/"                  => "T_FUNCTIONCALL",
+    "/\G(\{.*?\})/"                  => "T_FUNCTIONCALL",
     //"/\G(\<)/"                     => "T_FUNCTIONCALL_OPEN_BRACKET",
     //"/\G(\>)/"                     => "T_FUNCTIONCALL_CLOSE_BRACKET",
     //"/\G(\(.*?\))/"                => "T_EXPRESSION",
@@ -34,7 +32,7 @@ class Tokenizer {
   );
   protected static $_terminals_general = array(
     "/\G((?:[a-zA-Z\'\"]+\_*\d*\h*)+)/"    => "T_STRING",
-    "/\G(\r)/"                             => "T_NEWLINE",
+    "/\G(\r|\n|\r\n)/"                     => "T_NEWLINE",
     "/\G(\h+)/"                            => "T_WHITESPACE",
     "/\G([\.\,\;\:\?\!\'\"\-\_\/\~])/"     => "T_PUNCTUATION",
     "/\G([+-]?[0-9]*[.][0-9]+)/"           => "T_FLOAT",
@@ -95,6 +93,14 @@ class Tokenizer {
 
     foreach(static::$_terminals as $pattern => $name){
       if(preg_match($pattern, $line, $matches, 0, $this->offset)){
+
+        if($name == 'T_NEWLINE') {
+          $lastToken = $this->tokens[count($this->tokens)-1];
+          
+          if($lastToken['token'] == 'T_NEWLINE') {
+            $name = 'T_DOUBLE_NEWLINE';
+          }
+        }
 
         return array(
           'token'  => $name,

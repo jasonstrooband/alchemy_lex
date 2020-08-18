@@ -1,6 +1,5 @@
 # Minimal script for testing very basic functionality
 
-|Start {
-  :Hello World!
-  :Hi there!
-}
+|Start
+  ,Hello World!
+  ,Hi there!

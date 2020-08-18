@@ -1,19 +1,16 @@
 # Complex Test Script to test more complex groups, recursion and a basic function
 
-|Start {
-  :You see a [Creature], worth <Dice~d6> experience.
-}
+|Start
+  ,You see a [Creature], worth {Dice~d6} experience.
 
-:Creature {
-  1-2:Orc
-  3:Skeleton
-  4-7:Archdaemon
-  8:[Colour] Spirit
-}
+:Creature
+  1-2,Orc
+  3,Skeleton
+  4-7,Archdaemon
+  8,[Colour] Spirit
 
 # Colors for the various spirits
-;Colour {
-  5:Red
-  5:White
-  8:Blue
-}
+;Colour
+  5,Red
+  5,White
+  8,Blue

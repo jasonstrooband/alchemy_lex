@@ -54,20 +54,6 @@
     return $listingsSorted;
   }
 
-  function addLineNum($input) {
-    // TODO: Change line nums to not interfere with indentaion of the script
-    $input = explode("\n", $input);
-    //$count = count($input);
-    //$indent = strlen((string)$count);
-    for ($i=0; $i < count($input); $i++) {
-      //$temp = $i - $indent;
-      //var_dump(strlen((string)abs($temp)));
-      $input[$i] = ($i+1) . ":  " . $input[$i];
-    }
-    $input = implode("\n", $input);
-    return $input;
-  }
-
   if(!isset($_GET['script']) || $_GET['script'] == ''){
     $input = file_get_contents('./scripts/Tests/Test-Basic.txt', true);
   } else {
@@ -142,7 +128,15 @@
       <div class="row">
         <div class="col">
           <h2>Input</h2>
-          <div class="pre"><?php echo htmlspecialchars(addLineNum($input)) ?></div>
+            <div class="pre row">
+              <div style="padding-right:10px;"><?php
+                $lineCount = count( explode(PHP_EOL, $input) );
+                for ($i=0; $i < $lineCount; $i++) { 
+                  echo $i + 1 . ":<br />";
+                }
+              ?></div>
+              <div><?php echo htmlspecialchars($input) ?></div>
+            </div>
         </div>
         <?php if(isset($_GET['debug'])) { ?>
           <div class="col">

@@ -1,10 +1,8 @@
 # Minimal script for testing very basic functionality
 
-|Start {
-  :Multiline is easy, just by ending with an underscore, _
+|Start
+  ,Multiline is easy, just by ending with an underscore, _
   this line will continue on from the last one.
-
-  :Multiline is a great way to _
+  ,Multiline is a great way to _
   break your code into segments so that _
   your scripts are easier to manage.
-}

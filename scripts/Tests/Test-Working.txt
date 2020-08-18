@@ -1,5 +1,4 @@
 (testVar="test's")
 
-|Start {
-  :Test (testVar2=2)(testVar2)-(testVar+2+3)
-}
+|Start
+  ,Test (testVar2=2)(testVar2)-(testVar+2+3)

@@ -48,7 +48,8 @@ class Parser {
       // Ignore
       case 'T_LINECOMMENT': // Ignore all comments
       case 'T_GROUP_NAME': // Used in group expression don't parse
-      case 'T_GROUP_OPEN_BRACKET': // Used in group expression don't parse
+      //case 'T_GROUP_OPEN_BRACKET': // Used in group expression don't parse
+      case 'T_DOUBLE_NEWLINE':
       case 'T_GROUP_CLOSE_BRACKET': // Used in group expression don't parse
       case 'T_GROUPCALL_CLOSE_BRACKET': // Used in groupcall expression don't parse
       case 'T_FUNCTIONCALL_CLOSE_BRACKET': // Used in functioncall expression don't parse
@@ -210,6 +211,7 @@ class Parser {
 
   protected function parseDelimSubProgram($type){
     $token = $this->tokens[$this->current];
+    $close = '';
     $delimiter = '';
 
     $node = array();
@@ -219,10 +221,11 @@ class Parser {
 
     switch($type){
       case 'group':
-        $close = 'T_GROUP_CLOSE_BRACKET';
+        $close = 'T_DOUBLE_NEWLINE';
         $delimiter = '}';
         $node['value'] = $token['value'];
         $node['name'] = $this->tokens[$this->current + 1]['value'];
+        //var_dump($node);
         break;
       case 'line':
         $close = 'T_NEWLINE';
@@ -230,11 +233,11 @@ class Parser {
         if($token['token'] == 'T_GROUP_LINE_EQUAL_NUMBER'){
           // Do nothing, there is no range to calculate
         } else if($token['token'] == 'T_GROUP_LINE_SINGLE_NUMBER'){
-          $node['range'] = rtrim($token['value'], ':');
+          $node['range'] = rtrim($token['value'], ',');
         } else {
           $range = explode('-', $token['value']);
-          $node['range_min'] = rtrim($range[0], ':');
-          $node['range_max'] = rtrim($range[1], ':');
+          $node['range_min'] = rtrim($range[0], ',');
+          $node['range_max'] = rtrim($range[1], ',');
         }
 
         break;
@@ -260,16 +263,24 @@ class Parser {
 
     if(isset($close)){
       while(!($token['token'] === $close)){
+        //var_dump($close . ' - ' . $token['token']);
         if($token['token'] == 'T_EOF'){
+          if($close == 'T_NEWLINE' || $close == 'T_DOUBLE_NEWLINE') {
+            return $node;
+          }
           throw new Exception("Parse Error: Unexpected end of file, expected '" . $delimiter . "' - '" . $close . "' - Start at: " . $open);
         }
         $this->current++;
+        if($this->current > count($this->tokens)-1) $this->current = count($this->tokens) - 1;
         $token = $this->tokens[$this->current];
         $param = Parser::parseToken();
         if(gettype($param) !== 'boolean') $node['params'][] = $param;
       }
       $open = '';
     }
+    
+    $close = '';
+    $delimiter = '';
 
     return $node;
   }
