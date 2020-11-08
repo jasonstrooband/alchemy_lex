@@ -17,6 +17,7 @@
   require_once './includes/Tokenizer.php';
   require_once './includes/Parser.php';
   require_once './includes/Emitter.php';
+  require_once './includes/Functions.php';
 
   function print_error($msg){
     echo "<div style=;background-color:red;color:white;font-size:26px;padding:10px;margin:10px;>";
@@ -86,6 +87,7 @@
     .col {
       overflow: auto;
       padding: 0 10px;
+      min-width: 25%;
     }
 
     .pre {

@@ -20,6 +20,7 @@ class Emitter {
     } else {
       throw new Exception('AST top level must start as the program holding the script in the body');
     }
+    var_dump($this->scriptVariables);
   }
 
   private function evaluate($ast){
@@ -32,6 +33,9 @@ class Emitter {
         switch($ast[$x]['type']){
           case 'expression':
             $this->evaluateExpression($ast[$x]['params']);
+            break;
+          case 'declare_var':
+            $this->setVariable($ast[$x]['params']['name'], $ast[$x]['params']['value']);
             break;
           case 'group':
             if(strtolower($ast[$x]['name']) == 'start'){
@@ -59,6 +63,9 @@ class Emitter {
           case 'string':
             $this->output .= $ast[$x]['value'];
             break;
+          case 'variable':
+            $this->output .= $this->getVariable($ast[$x]['value']);
+            break;
           case 'groupcall':
             $found = false;
             for($y = 0; $y < count($this->fullAST); $y++){
@@ -75,7 +82,8 @@ class Emitter {
             }
           break;
           case 'functioncall':
-            $this->output .= $this->evaluateFunction($ast[$x]);
+            //$this->output .= $this->evaluateFunction($ast[$x]);
+            $this->output .= Functions::evaluateFunction($ast[$x]);
             break;
           case 'expression':
             $this->output .= $this->evaluateExpression($ast[$x]['params']);
@@ -180,7 +188,8 @@ class Emitter {
 
     switch(strtolower($functionName)){
       case 'cap':
-        if(count($ast['params']) > 1) throw new Exception("Emitter Error: Cap function expects one parameter, found " . (count($ast['params'])));
+        //if(count($ast['params']) > 1) throw new Exception("Emitter Error: Cap function expects one parameter, found " . (count($ast['params'])));
+        $this->checkFunctionParams('Cap', count($ast['params']), 1);
         return ucfirst($ast['params'][0]);
         break;
       case 'dice':
@@ -209,6 +218,21 @@ class Emitter {
     throw new Exception("Emitter Error: No return value found for function '" . $functionName . "'");
   }
 
+  private function checkFunctionParams($functionName, $paramGiven, $paramMin = null, $paramMax = null) {
+    var_dump($functionName . ' - ' . $paramGiven . ' - ' . $paramMin . ' - ' . $paramMax);
+
+    $range = $paramMin . '-' . $paramMax;
+
+    if($paramMax == null) {
+      $paramMax = $paramMin;
+      $range = $paramMin;
+    }
+
+    if($paramGiven < $paramMin || $paramGiven > $paramMax) {
+      throw new Exception("Emitter Error: " . $functionName . " function expects " . $range . " parameter, found " . $paramGiven);
+    }
+  }
+
   private function evaluateExpression($ast) {
     $expressionOutput = '';
     //var_dump($ast);
@@ -222,7 +246,7 @@ class Emitter {
           $expressionOutput = $this->evaluateBinary($ast['operator'], $ast['left'], $ast['right']);
           break;
         case 'variable':
-          $expressionOutput = $this->renderVar($ast['value']);
+          $expressionOutput = $this->getVariable($ast['value']);
           break;
         case 'number':
           $expressionOutput = $ast['value'];
@@ -242,12 +266,6 @@ class Emitter {
   private function evaluateBinary($operator, $left, $right){
     $left = $this->resolveExpressionType($left);
     $right = $this->resolveExpressionType($right);
-    //$left = ($left['type'] != 'number' ? $this->renderVar($left['value']) : $left['value']);
-    //$right = ($right['type'] != 'number' ? $this->renderVar($right['value']) : $right['value']);
-
-    //var_dump($left);
-    //var_dump($operator);
-    //var_dump($right);
 
     switch ($operator) {
       case "-":
@@ -282,7 +300,7 @@ class Emitter {
         return $subExpr['value'];
         break;
       case 'variable':
-        return $this->renderVar($subExpr['value']);
+        return $this->getVariable($subExpr['value']);
         break;
       case 'binary':
         return $this->evaluate($subExpr);
@@ -293,7 +311,11 @@ class Emitter {
     }
   }
   
-  private function renderVar($renderVar){
+  private function setVariable($name, $value){
+    $this->scriptVariables[$name] = $value;
+  }
+
+  private function getVariable($renderVar){
     if(array_key_exists($renderVar, $this->scriptVariables)) {
       return $this->scriptVariables[$renderVar];
     } else {

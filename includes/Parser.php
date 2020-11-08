@@ -154,6 +154,22 @@ class Parser {
       case 'T_FUNCTIONCALL_OPEN_BRACKET':
         return $this->parseDelimSubProgram('functioncall');
         break;
+      case 'T_VARIABLE_DECLARE':
+        $varArray = explode(',', str_replace('%', '', $token['value']));
+        return array(
+          'type'  => 'declare_var',
+          'params' => array(
+            'name' => $varArray[0],
+            'value' => $varArray[1]
+          )
+        );
+        break;
+      case 'T_VARIABLE_RENDER':
+        return array(
+          'type' => 'variable',
+          'value' => str_replace('%', '', $token['value'])
+        );
+        break;
       // End of Script
       case 'T_EOF':
         return false;
@@ -191,14 +207,17 @@ class Parser {
         // Strip surrounding brackets
         $value = substr($token['value'], 1, -1);
         $value = preg_split('@~@', $value, NULL, PREG_SPLIT_NO_EMPTY);
-        if(count($value) == 1) throw new Exception("Parse Error: Function withhout any parameters - '" . $value[0] . "' at line " . $token['line'] . "-" . ($token['offset'] + 1));
         $node['value'] = $value[0];
-        $params = preg_split('@,@', $value[1], NULL, PREG_SPLIT_NO_EMPTY);
-        $paramsNodes = array();
-        for($x = 0; $x < count($params); $x++){
-          $paramsNodes[] = $params[$x];
+        if(count($value) != 1) {
+          $params = preg_split('@,@', $value[1], NULL, PREG_SPLIT_NO_EMPTY);
+          $paramsNodes = array();
+          for($x = 0; $x < count($params); $x++){
+            $paramsNodes[] = $params[$x];
+          }
+          $node['params'] = $paramsNodes;
+        } else {
+          $node['params'] = array();
         }
-        $node['params'] = $paramsNodes;
       break;
       default:
         // Unknown expression type

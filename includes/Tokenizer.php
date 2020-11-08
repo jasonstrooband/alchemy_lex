@@ -22,6 +22,10 @@ class Tokenizer {
     "/\G(\()/"                       => "T_EXPRESSION_OPEN_BRACKET",
     "/\G(\))/"                       => "T_EXPRESSION_CLOSE_BRACKET",
   );
+  protected static $_terminals_variables = array(
+    "/\G(\%[a-zA-Z0-9_]+\%\,.*?)(?=\r|\n|\r\n)/"      => "T_VARIABLE_DECLARE",
+    "/\G(\%[a-zA-Z0-9_]+\%)/"          => "T_VARIABLE_RENDER",
+  );
   protected static $_terminals_math = array(
     "/\G(\+)/" => "T_MATH_ADDITION",
     "/\G(\-)/" => "T_MATH_SUBTRACTION",
@@ -52,6 +56,7 @@ class Tokenizer {
     static::$_terminals = array_merge(
       static::$_terminals,
       static::$_terminals_comments,
+      static::$_terminals_variables,
       static::$_terminals_special,
       static::$_terminals_math,
       static::$_terminals_general
