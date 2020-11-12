@@ -6,6 +6,7 @@ class Parser {
   private $current = false;
   private $tokens;
 
+  // Old system
   private static $precedence = array(
     "="  => 1,
     "||" => 2,
@@ -14,6 +15,15 @@ class Parser {
     "+"  => 10, "-" => 10,
     "*"  => 20, "/" => 20, "%" => 20,
   );
+
+  private static $operators = [
+    '+' => ['precedence' => 0, 'associativity' => 'left'],
+    '-' => ['precedence' => 0, 'associativity' => 'left'],
+    '*' => ['precedence' => 1, 'associativity' => 'left'],
+    '/' => ['precedence' => 1, 'associativity' => 'left'],
+    '%' => ['precedence' => 1, 'associativity' => 'left'],
+    '^' => ['precedence' => 2, 'associativity' => 'right'],
+  ];
 
   public function __construct($tokens){
     //$this->tokens = static::removeEmpty($tokens);
@@ -136,10 +146,15 @@ class Parser {
         if($this->inExpression) throw new Exception("Recursive expressions not yet supported");
         $this->inExpression = true;
         $this->current++;
+
+        $rpn = $this->shuntingYard();
+
+        //var_dump(implode(array_reverse($rpn)));
         
         return array(
           'type'  => 'expression',
-          'params' => $this->parseExpression($this->parseToken(), 0)
+          //'params' => $this->parseExpression($this->parseToken(), 0)
+          'params' => null
         );
         break;
       case 'T_EXPRESSION_CLOSE_BRACKET':
@@ -347,6 +362,101 @@ class Parser {
     }
     // Not an operator just return the left value
     return $left;
+  }
+
+  protected function shuntingYard() {
+    $tokens = $this->findAllTokensInExpression();
+    $stack = new \SplStack();
+    $output = new \SplQueue();
+
+    foreach ($tokens as $token) {
+      if (is_numeric($token)) {
+        $output->enqueue($token);
+      } elseif (isset(Parser::$operators[$token])) {
+        $o1 = $token;
+        while (Parser::has_operator($stack) && ($o2 = $stack->top()) && Parser::has_lower_precedence($o1, $o2)) {
+          $output->enqueue($stack->pop());
+        }
+        $stack->push($o1);
+      } elseif ('(' === $token) {
+        $stack->push($token);
+      } elseif (')' === $token) {
+        while (count($stack) > 0 && '(' !== $stack->top()) {
+          $output->enqueue($stack->pop());
+        }
+
+        if (count($stack) === 0) {
+          throw new \InvalidArgumentException(sprintf('Mismatched parenthesis in input: %s', json_encode($tokens)));
+        }
+
+        // pop off '('
+        $stack->pop();
+      } else {
+        throw new \InvalidArgumentException(sprintf('Invalid token: %s', $token));
+      }
+    }
+
+    while (Parser::has_operator($stack)) {
+      $output->enqueue($stack->pop());
+    }
+
+    if (count($stack) > 0) {
+      throw new \InvalidArgumentException(sprintf('Mismatched parenthesis or misplaced number in input: %s', json_encode($tokens)));
+    }
+
+    return iterator_to_array($output);
+  }
+
+  protected function findAllTokensInExpression() {
+    $found = false;
+    $depth = 0;
+    $stack = array();
+
+    while($found == false) {
+      $token = $this->tokens[$this->current];
+
+      switch($token['token']) {
+        case 'T_NUMBER':
+        case 'T_MATH_ADDITION':
+        case 'T_MATH_SUBTRACTION':
+        case 'T_MATH_MULTIPLY':
+        case 'T_MATH_DIVISION':
+        case 'T_MATH_POWER':
+          $stack[] = $token['value'];
+          break;
+        case 'T_EXPRESSION_OPEN_BRACKET':
+          $stack[] = $token['value'];
+          $depth++;
+          break;
+        case 'T_EXPRESSION_CLOSE_BRACKET':
+          $stack[] = $token['value'];
+          $depth--;
+          if($depth < 0) $found = true;
+          break;
+        // Ignore all whitespace in expressions
+        case 'T_WHITESPACE':
+          break;
+        default:
+          throw new Exception("Parse Error: Token not supported in expression: '" . $token['token'] . "'");
+          break;
+      }
+
+      $this->current++;
+    }
+
+    array_pop($stack);
+
+    return $stack;
+  }
+
+  protected static function has_operator(\SplStack $stack) {
+    return count($stack) > 0 && ($top = $stack->top()) && isset(Parser::$operators[$top]);
+  }
+
+  function has_lower_precedence($o1, $o2) {
+    $op1 = Parser::$operators[$o1];
+    $op2 = Parser::$operators[$o2];
+    return ('left' === $op1['associativity'] && $op1['precedence'] === $op2['precedence']) || $op1['precedence'] < $op2['precedence'];
   }
 
   protected static function removeEmpty($tokens){

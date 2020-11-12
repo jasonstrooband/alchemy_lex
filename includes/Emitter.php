@@ -20,7 +20,7 @@ class Emitter {
     } else {
       throw new Exception('AST top level must start as the program holding the script in the body');
     }
-    var_dump($this->scriptVariables);
+    //var_dump($this->scriptVariables);
   }
 
   private function evaluate($ast){
@@ -138,10 +138,8 @@ class Emitter {
             // If it is the first line you don't ned to error check if the number is too low
             if($k != 0){
               if($line_num_min <= $line_last) throw new Exception("Emitter Error: Line number minimum range cannot be lower for group '" . $groupAST['name'] . "'");
-              if($line_num_max <= $line_last) throw new Exception("Emitter Error: Line number maximum range cannot be lower for group '" . $groupAST['name'] . "'");
             }
             if($line_num_min > ($line_last + 1)) throw new Exception("Emitter Error: Line number min cannot be more than 1 higher than the last line number for group '" . $groupAST['name'] . "'");
-            //if($line_num_max > ($line_last + 2)) throw new Exception("Emitter Error: Line number max cannot be more than 1 higher than the last line number for group '" . $groupAST['name'] . "'");
             $group_max = $line_num_max;
           } else {
             $line_num = $line['range'];
@@ -183,56 +181,6 @@ class Emitter {
     $this->evaluate($groupAST['params'][$lineProg]['params']);
   }
 
-  private function evaluateFunction($ast){
-    $functionName = $ast['value'];
-
-    switch(strtolower($functionName)){
-      case 'cap':
-        //if(count($ast['params']) > 1) throw new Exception("Emitter Error: Cap function expects one parameter, found " . (count($ast['params'])));
-        $this->checkFunctionParams('Cap', count($ast['params']), 1);
-        return ucfirst($ast['params'][0]);
-        break;
-      case 'dice':
-        $output = '';
-        for ($i=0; $i < count($ast['params']); $i++) {
-          $currentParam = $ast['params'][$i];
-          if(preg_match('/(\d+)*d(\d+)/', $currentParam, $matches)) {}
-          array_splice($matches, 0, 1);
-          $dice = ($matches[0] == '' ? 1 : (int)$matches[0]);
-          $sides = (int)$matches[1];
-          $result = 0;
-         
-          for($x = 0; $x < $dice; $x++){
-            $result += rand(1, $sides);
-          }
-
-          $output .= $result . ', ';
-        }
-        $output = trim($output);
-        return $output;
-        break;
-      default:
-        throw new Exception("Emitter Error: Function '" . $functionName . "' does not exist");
-        break;
-    }
-    throw new Exception("Emitter Error: No return value found for function '" . $functionName . "'");
-  }
-
-  private function checkFunctionParams($functionName, $paramGiven, $paramMin = null, $paramMax = null) {
-    var_dump($functionName . ' - ' . $paramGiven . ' - ' . $paramMin . ' - ' . $paramMax);
-
-    $range = $paramMin . '-' . $paramMax;
-
-    if($paramMax == null) {
-      $paramMax = $paramMin;
-      $range = $paramMin;
-    }
-
-    if($paramGiven < $paramMin || $paramGiven > $paramMax) {
-      throw new Exception("Emitter Error: " . $functionName . " function expects " . $range . " parameter, found " . $paramGiven);
-    }
-  }
-
   private function evaluateExpression($ast) {
     $expressionOutput = '';
     //var_dump($ast);
@@ -256,7 +204,7 @@ class Emitter {
           break;
       default:
           var_dump($ast);
-        throw new Exception("Emitter Error: Unable to evaluate expression type: " . $ast['type']);
+        throw new Exception("Emitter Error: Unable to evaluate expression type: " . ($ast['type'] == null ? 'null' : $ast['type']));
         break;
     }
 
