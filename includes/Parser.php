@@ -5,6 +5,7 @@ class Parser {
   private $parseOutput = false;
   private $current = false;
   private $tokens;
+  private $tempPreFix;
 
   // Old system
   private static $precedence = array(
@@ -17,12 +18,12 @@ class Parser {
   );
 
   private static $operators = [
-    '+' => ['precedence' => 0, 'associativity' => 'left'],
-    '-' => ['precedence' => 0, 'associativity' => 'left'],
-    '*' => ['precedence' => 1, 'associativity' => 'left'],
-    '/' => ['precedence' => 1, 'associativity' => 'left'],
-    '%' => ['precedence' => 1, 'associativity' => 'left'],
-    '^' => ['precedence' => 2, 'associativity' => 'right'],
+    '+' => ['precedence' => 0, 'associativity' => 0],
+    '-' => ['precedence' => 0, 'associativity' => 0],
+    '*' => ['precedence' => 1, 'associativity' => 0],
+    '/' => ['precedence' => 1, 'associativity' => 0],
+    '%' => ['precedence' => 1, 'associativity' => 0],
+    '^' => ['precedence' => 2, 'associativity' => 1],
   ];
 
   public function __construct($tokens){
@@ -147,14 +148,21 @@ class Parser {
         $this->inExpression = true;
         $this->current++;
 
-        $rpn = $this->shuntingYard();
+        //TODO: Add error checking to check for invalid expressions like double binary symbols
+        $expressionTokens = $this->findAllTokensInExpression();
+        $postFix = $this->shuntingYard($expressionTokens);
+        $preFix = $this->reverseShuntingYard($expressionTokens);
+        $expressionTree = $this->prefixToTree($preFix);
 
-        //var_dump(implode(array_reverse($rpn)));
+        //var_dump("PostFix: (234+5**) " . implode($postFix));
+        //var_dump("PreFix: (**2+345) " . implode($preFix));
+        //var_dump("Expression Tree: ");
+        //var_dump($expressionTree);
         
         return array(
           'type'  => 'expression',
           //'params' => $this->parseExpression($this->parseToken(), 0)
-          'params' => null
+          'params' => $expressionTree
         );
         break;
       case 'T_EXPRESSION_CLOSE_BRACKET':
@@ -319,6 +327,7 @@ class Parser {
     return $node;
   }
 
+  // TODO: Test and remove function because of the new method
   protected function parseExpression($left, $last_prec) {
     // Peek for next token
     $next_token = $this->peekNext();
@@ -364,49 +373,6 @@ class Parser {
     return $left;
   }
 
-  protected function shuntingYard() {
-    $tokens = $this->findAllTokensInExpression();
-    $stack = new \SplStack();
-    $output = new \SplQueue();
-
-    foreach ($tokens as $token) {
-      if (is_numeric($token)) {
-        $output->enqueue($token);
-      } elseif (isset(Parser::$operators[$token])) {
-        $o1 = $token;
-        while (Parser::has_operator($stack) && ($o2 = $stack->top()) && Parser::has_lower_precedence($o1, $o2)) {
-          $output->enqueue($stack->pop());
-        }
-        $stack->push($o1);
-      } elseif ('(' === $token) {
-        $stack->push($token);
-      } elseif (')' === $token) {
-        while (count($stack) > 0 && '(' !== $stack->top()) {
-          $output->enqueue($stack->pop());
-        }
-
-        if (count($stack) === 0) {
-          throw new \InvalidArgumentException(sprintf('Mismatched parenthesis in input: %s', json_encode($tokens)));
-        }
-
-        // pop off '('
-        $stack->pop();
-      } else {
-        throw new \InvalidArgumentException(sprintf('Invalid token: %s', $token));
-      }
-    }
-
-    while (Parser::has_operator($stack)) {
-      $output->enqueue($stack->pop());
-    }
-
-    if (count($stack) > 0) {
-      throw new \InvalidArgumentException(sprintf('Mismatched parenthesis or misplaced number in input: %s', json_encode($tokens)));
-    }
-
-    return iterator_to_array($output);
-  }
-
   protected function findAllTokensInExpression() {
     $found = false;
     $depth = 0;
@@ -422,14 +388,14 @@ class Parser {
         case 'T_MATH_MULTIPLY':
         case 'T_MATH_DIVISION':
         case 'T_MATH_POWER':
-          $stack[] = $token['value'];
+          $stack[] = $token;
           break;
         case 'T_EXPRESSION_OPEN_BRACKET':
-          $stack[] = $token['value'];
+          $stack[] = $token;
           $depth++;
           break;
         case 'T_EXPRESSION_CLOSE_BRACKET':
-          $stack[] = $token['value'];
+          $stack[] = $token;
           $depth--;
           if($depth < 0) $found = true;
           break;
@@ -447,6 +413,137 @@ class Parser {
     array_pop($stack);
 
     return $stack;
+  }
+
+  protected function shuntingYard($tokens) {
+
+    //while there are tokens to be read:
+    //  read a token.
+    //  if the token is a number, then:
+    //      push it to the output queue.
+    //  else if the token is a function then:
+    //      push it onto the operator stack 
+    //  else if the token is an operator then:
+    //      while ((there is an operator at the top of the operator stack)
+    //            and ((the operator at the top of the operator stack has greater precedence)
+    //                or (the operator at the top of the operator stack has equal precedence and the token is left associative))
+    //            and (the operator at the top of the operator stack is not a left parenthesis)):
+    //          pop operators from the operator stack onto the output queue.
+    //      push it onto the operator stack.
+    //  else if the token is a left parenthesis (i.e. "("), then:
+    //      push it onto the operator stack.
+    //  else if the token is a right parenthesis (i.e. ")"), then:
+    //      while the operator at the top of the operator stack is not a left parenthesis:
+    //          pop the operator from the operator stack onto the output queue.
+    //      /* If the stack runs out without finding a left parenthesis, then there are mismatched parentheses. */
+    //      if there is a left parenthesis at the top of the operator stack, then:
+    //          pop the operator from the operator stack and discard it
+    ///* After while loop, if operator stack not null, pop everything to output queue */
+    //if there are no more tokens to read then:
+    //    while there are still operator tokens on the stack:
+    //        /* If the operator token on the top of the stack is a parenthesis, then there are mismatched parentheses. */
+    //        pop the operator from the operator stack onto the output queue.
+    //exit.
+
+    $stack = new \SplStack();
+    $output = new \SplQueue();
+
+    foreach ($tokens as $token) {
+      // If token is a number
+      if (is_numeric($token['value'])) {
+        $output->enqueue($token['value']);
+        // If token is an operator
+      } elseif (isset(Parser::$operators[$token['value']])) {
+        $o1 = $token['value'];
+        while (Parser::has_operator($stack) && ($o2 = $stack->top()) && Parser::has_lower_precedence($o1, $o2)) {
+          $output->enqueue($stack->pop());
+        }
+        $stack->push($o1);
+        // If token is a left parenthesis
+      } elseif ('(' === $token['value']) {
+        $stack->push($token['value']);
+        // If token is a right parenthesis
+      } elseif (')' === $token['value']) {
+        while (count($stack) > 0 && '(' !== $stack->top()) {
+          $output->enqueue($stack->pop());
+        }
+
+        if (count($stack) === 0) {
+          throw new \InvalidArgumentException(sprintf('Mismatched parenthesis in input: %s', json_encode($tokens)));
+        }
+
+        // pop off '('
+        $stack->pop();
+      } else {
+        throw new \InvalidArgumentException(sprintf('Invalid token: %s', $token['value']));
+      }
+    }
+
+    while (Parser::has_operator($stack)) {
+      $output->enqueue($stack->pop());
+    }
+
+    if (count($stack) > 0) {
+      throw new \InvalidArgumentException(sprintf('Mismatched parenthesis or misplaced number in input: %s', json_encode($tokens)));
+    }
+
+    return iterator_to_array($output);
+  }
+
+  protected function reverseShuntingYard($tokens) {
+    $tokens = array_reverse($tokens);
+
+    for($x = 0; $x < count($tokens); $x++) {
+      if($tokens[$x]['token'] == 'T_EXPRESSION_CLOSE_BRACKET'){
+        $tokens[$x]['token'] = 'T_EXPRESSION_OPEN_BRACKET';
+        $tokens[$x]['value'] = '(';
+      } else if($tokens[$x]['token'] == 'T_EXPRESSION_OPEN_BRACKET') {
+        $tokens[$x]['token'] = 'T_EXPRESSION_CLOSE_BRACKET';
+        $tokens[$x]['value'] = ')';
+      }
+    }
+    $tokens = $this->shuntingYard($tokens);
+    $tokens = array_reverse($tokens);
+    return $tokens;
+  }
+
+  protected function prefixToTree($preFix) {
+    //var_dump("Current Prefix");
+    //var_dump($preFix);
+    
+    $c = array_shift($preFix);
+    $this->tempPreFix = $preFix;
+    //var_dump("Parse: " . $c);
+
+    if(is_numeric($c)) {
+      //var_dump('Operand');
+      return array(
+        "type" => "number",
+			  "value" => $c
+      );
+      return $c;
+    } else {
+      //var_dump('Operator');
+      //var_dump('Go Left');
+      $left = $this->prefixToTree($this->tempPreFix);
+      //var_dump('Go Right');
+      $right = $this->prefixToTree($this->tempPreFix);
+      return array(
+        "type" => "binary",
+        "operator" => $c,
+        "left" => $left,
+        "right" => $right
+      );
+    }
+
+    // C = first item in expr
+    // Remove first item in expr
+    // If c is a number
+      // Return empty node with that number
+    // Else is operator
+      // Left = this function with remaining expr
+      // Right = this function with remaining expr
+      // Return node with operator, left and right
   }
 
   protected static function has_operator(\SplStack $stack) {

@@ -21,10 +21,9 @@ Alchemy Lex is a lexical analyser that takes a predefined script and pours over 
 
 * Access the localhost of your web server and navigate to the sub folder for this project
 * Select a script from the dropdown and hit go
-* **Alternatvely** you can go to the jsver.php page for a version that runs on javascript and is under construction to get it up to date qith the php version.
 
->See [Features & Roadmap](https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap) page for more information.<br>
->Warning ^^ infodump.
+>See [Wiki](https://github.com/jasonstrooband/alchemy_lex/wiki)  for more information on current features, roadmap or references.<br>
+>The wiki pages may be out of date because of recent changes - expect updates soon.
 
 ## Author
 

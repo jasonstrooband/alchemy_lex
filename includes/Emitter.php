@@ -236,6 +236,7 @@ class Emitter {
       case "*": return $left * $right;
       // TODO: Add check to see if not dividing by 0
       case "/": return $left / $right;
+      case "^": return pow($left, $right);
       default:
         throw new Exception("Emitter Error: Binary operator currently not supported or unknown: " . $operator);
         break;
