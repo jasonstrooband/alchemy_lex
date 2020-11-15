@@ -59,7 +59,7 @@
   if(!isset($_GET['script']) || $_GET['script'] == ''){
     $input = file_get_contents('./scripts/Tests/Test-Basic.txt', true);
   } else {
-    $input = file_get_contents('./scripts/' . $_GET['script'] . '.txt', true);
+    $input = file_get_contents('./scripts/' . $_GET['script'], true);
   }
   // At start of script
   $time_start = microtime(true); 
@@ -113,11 +113,11 @@
           <optgroup label="<?php echo $script_cat_key; ?>">
             <?php
               foreach($script_names as $name) {
-                $script_name = basename($name, '.txt');
-                $script_value = $script_cat_key . '/' . $script_name;
+                //$script_name = basename($name, '.txt');
+                $script_value = $script_cat_key . '/' . $name;
                 //echo $script_value;
                 //echo urldecode($_GET['script']); ?>
-                <option <?php echo (isset($_GET['script']) && urldecode($_GET['script']) == $script_value ? 'selected="selected"' : '') ?> value="<?php echo $script_value; ?>"><?php echo $script_name; ?></option>
+                <option <?php echo (isset($_GET['script']) && urldecode($_GET['script']) == $script_value ? 'selected="selected"' : '') ?> value="<?php echo $script_value; ?>"><?php echo $name; ?></option>
               <?php } ?>
           </optgroup>
         <?php } ?>

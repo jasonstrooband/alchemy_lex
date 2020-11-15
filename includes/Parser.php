@@ -76,6 +76,7 @@ class Parser {
       // If not in a comment return the AST
       case 'T_COMMA':
       case 'T_STRING':
+      case 'T_BRACKETS':
       //Math tokens not inside an expression should bre treated like a string
       case 'T_MATH_ADDITION':
       case 'T_MATH_SUBTRACTION':
@@ -142,9 +143,7 @@ class Parser {
         return $this->parseDelimSubProgram('groupcall');
         break;
       // Group call Expression
-      case 'T_EXPRESSION_OPEN_BRACKET':
-        // TODO: May need expression depth var for recursive expressions
-        if($this->inExpression) throw new Exception("Recursive expressions not yet supported");
+      case 'T_EXPRESSION_BOUNDARY':
         $this->inExpression = true;
         $this->current++;
 
@@ -375,7 +374,6 @@ class Parser {
 
   protected function findAllTokensInExpression() {
     $found = false;
-    $depth = 0;
     $stack = array();
 
     while($found == false) {
@@ -388,16 +386,12 @@ class Parser {
         case 'T_MATH_MULTIPLY':
         case 'T_MATH_DIVISION':
         case 'T_MATH_POWER':
+        case 'T_OPEN_BRACKET':
+        case 'T_CLOSE_BRACKET':
           $stack[] = $token;
           break;
-        case 'T_EXPRESSION_OPEN_BRACKET':
-          $stack[] = $token;
-          $depth++;
-          break;
-        case 'T_EXPRESSION_CLOSE_BRACKET':
-          $stack[] = $token;
-          $depth--;
-          if($depth < 0) $found = true;
+        case 'T_EXPRESSION_BOUNDARY':
+          $found = true;
           break;
         // Ignore all whitespace in expressions
         case 'T_WHITESPACE':
@@ -410,41 +404,10 @@ class Parser {
       $this->current++;
     }
 
-    array_pop($stack);
-
     return $stack;
   }
 
   protected function shuntingYard($tokens) {
-
-    //while there are tokens to be read:
-    //  read a token.
-    //  if the token is a number, then:
-    //      push it to the output queue.
-    //  else if the token is a function then:
-    //      push it onto the operator stack 
-    //  else if the token is an operator then:
-    //      while ((there is an operator at the top of the operator stack)
-    //            and ((the operator at the top of the operator stack has greater precedence)
-    //                or (the operator at the top of the operator stack has equal precedence and the token is left associative))
-    //            and (the operator at the top of the operator stack is not a left parenthesis)):
-    //          pop operators from the operator stack onto the output queue.
-    //      push it onto the operator stack.
-    //  else if the token is a left parenthesis (i.e. "("), then:
-    //      push it onto the operator stack.
-    //  else if the token is a right parenthesis (i.e. ")"), then:
-    //      while the operator at the top of the operator stack is not a left parenthesis:
-    //          pop the operator from the operator stack onto the output queue.
-    //      /* If the stack runs out without finding a left parenthesis, then there are mismatched parentheses. */
-    //      if there is a left parenthesis at the top of the operator stack, then:
-    //          pop the operator from the operator stack and discard it
-    ///* After while loop, if operator stack not null, pop everything to output queue */
-    //if there are no more tokens to read then:
-    //    while there are still operator tokens on the stack:
-    //        /* If the operator token on the top of the stack is a parenthesis, then there are mismatched parentheses. */
-    //        pop the operator from the operator stack onto the output queue.
-    //exit.
-
     $stack = new \SplStack();
     $output = new \SplQueue();
 
@@ -494,11 +457,11 @@ class Parser {
     $tokens = array_reverse($tokens);
 
     for($x = 0; $x < count($tokens); $x++) {
-      if($tokens[$x]['token'] == 'T_EXPRESSION_CLOSE_BRACKET'){
-        $tokens[$x]['token'] = 'T_EXPRESSION_OPEN_BRACKET';
+      if($tokens[$x]['token'] == 'T_CLOSE_BRACKET'){
+        $tokens[$x]['token'] = 'T_OPEN_BRACKET';
         $tokens[$x]['value'] = '(';
-      } else if($tokens[$x]['token'] == 'T_EXPRESSION_OPEN_BRACKET') {
-        $tokens[$x]['token'] = 'T_EXPRESSION_CLOSE_BRACKET';
+      } else if($tokens[$x]['token'] == 'T_OPEN_BRACKET') {
+        $tokens[$x]['token'] = 'T_CLOSE_BRACKET';
         $tokens[$x]['value'] = ')';
       }
     }

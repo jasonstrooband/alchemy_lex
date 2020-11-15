@@ -7,7 +7,7 @@ class Tokenizer {
     "/\G(\*\/)/"                => "T_BLOCKCOMMENT_CLOSE",
   );
   protected static $_terminals_special = array(
-    "/\G([:;|])/"                    => "T_GROUP_IDENTIFIER",
+    "/\G([:;])/"                     => "T_GROUP_IDENTIFIER",
     "/\G(?<=^[:;|])(\w+(?:\h\w+)?)/" => "T_GROUP_NAME",
     "/\G(\d+\-\d+\,)/"               => "T_GROUP_LINE_RANGE_NUMBER",
     "/\G(\d+\,)/"                    => "T_GROUP_LINE_SINGLE_NUMBER",
@@ -19,8 +19,7 @@ class Tokenizer {
     //"/\G(\<)/"                     => "T_FUNCTIONCALL_OPEN_BRACKET",
     //"/\G(\>)/"                     => "T_FUNCTIONCALL_CLOSE_BRACKET",
     //"/\G(\(.*?\))/"                => "T_EXPRESSION",
-    "/\G(\()/"                       => "T_EXPRESSION_OPEN_BRACKET",
-    "/\G(\))/"                       => "T_EXPRESSION_CLOSE_BRACKET",
+    "/\G(\|)/"                       => "T_EXPRESSION_BOUNDARY",
   );
   protected static $_terminals_variables = array(
     "/\G(\%[a-zA-Z0-9_]+\%\,.*?)(?=\r|\n|\r\n)/"      => "T_VARIABLE_DECLARE",
@@ -41,6 +40,8 @@ class Tokenizer {
     "/\G([\.\,\;\:\?\!\'\"\-\_\/\~])/"     => "T_PUNCTUATION",
     "/\G([+-]?[0-9]*[.][0-9]+)/"           => "T_FLOAT",
     "/\G(\d+)/"                            => "T_NUMBER",
+    "/\G(\()/"                             => "T_OPEN_BRACKET",
+    "/\G(\))/"                             => "T_CLOSE_BRACKET",
     //"/\G(?<=[\[\(])(\w+)/"               => "T_IDENTIFIER",
     //"/\G(\b[a-zA-Z0-9\s]+\b)/"           => "T_STRING",
     //"/\G(\b.+?(?=[\(<[]))/"              => "T_STRING",
