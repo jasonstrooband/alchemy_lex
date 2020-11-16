@@ -18,15 +18,15 @@ class Emitter {
         print_error($e->getMessage());
       }
     } else {
-      throw new Exception('AST top level must start as the program holding the script in the body');
+      throw new Exception('Emitter Error: AST top level must start as the program holding the script in the body');
     }
     //var_dump($this->scriptVariables);
   }
 
-  private function evaluate($ast){
-    if(isset($ast['type']) && $ast['type'] == "binary"){
-      return $this->evaluateBinary($ast['operator'], $ast['left'], $ast['right']);
-    }
+  private function evaluate($ast, $return = false){
+    //if(isset($ast['type']) && $ast['type'] == "binary"){
+    //  return $this->evaluateBinary($ast['operator'], $ast['left'], $ast['right']);
+    //}
     if($this->parent == 'program' && $this->startFound == false){
       // Evaluate top level element
       for($x = 0; $x < count($ast); $x++){
@@ -40,11 +40,11 @@ class Emitter {
           case 'group':
             if(strtolower($ast[$x]['name']) == 'start'){
               $this->startFound = true;
-              $this->evaluateGroup($ast[$x]);
+              $this->output .= $this->evaluateGroup($ast[$x]);
             }
             break;
           default:
-            throw new Exception('Unknown top level evaluation: ' . $ast[$x]['type']);
+            throw new Exception('Emitter Error: Unknown top level evaluation: ' . $ast[$x]['type']);
             break;
         }
       }
@@ -53,54 +53,70 @@ class Emitter {
     }
 
     if($this->parent == 'group'){
+      $groupOutput = '';
       // Evaluate lines
-      for($x = 0; $x < count($ast); $x++){
-        if(!isset($ast[$x]['type'])) {
-          throw new Exception('Emitter Error: out of range ast');
-        }
-        switch($ast[$x]['type']){
-          case 'number':
-          case 'string':
-            $this->output .= $ast[$x]['value'];
-            break;
-          case 'variable':
-            $this->output .= $this->getVariable($ast[$x]['value']);
-            break;
-          case 'groupcall':
-            $found = false;
-            for($y = 0; $y < count($this->fullAST); $y++){
-              if(count($ast[$x]['params']) > 1) throw new Exception('Group calls cannot have more than 1 argument in this version!');
-              if($ast[$x]['params'][0]['type'] != 'string') throw new Exception('The first argument for a group call must be the group name');
-
-              if($this->fullAST[$y]['type'] == 'group' &&  $this->fullAST[$y]['name'] == $ast[$x]['params'][0]['value']){
-                $this->evaluateGroup($this->fullAST[$y]);
-                $found = true;
-              }
-            }
-            if(!$found){
-              throw new Exception('Cannot find group: ' . $ast[$x]['params'][0]['value']);
-            }
-          break;
-          case 'functioncall':
-            //$this->output .= $this->evaluateFunction($ast[$x]);
-            $this->output .= Functions::evaluateFunction($ast[$x]);
-            break;
-          case 'expression':
-            $this->output .= $this->evaluateExpression($ast[$x]['params']);
-            break;
-          //case 'binary':
-          //  $this->output .= $this->evaluateBinary($ast[$x]['operator'], $ast[$x]['left'], $ast[$x]['right']);
-          //  break;
-          default:
-            throw new Exception("Emitter Error: Unable to evaluate type: " . $ast[$x]['type']);
-            break;
-        }
-      }
+      $lineOutput = $this->evaluateSingleLine($ast);
       $this->parent = 'program';
+      if($return == false) {
+        $this->output .= $lineOutput;
+      } else {
+        return $lineOutput;
+      }
       return true;
     }
 
     throw new Exception("Emitter Error: Unknown emitter evaluation parent: " . $this->parent);
+  }
+
+  private function evaluateSingleLine($ast) {
+    $lineOutput = '';
+    for($x = 0; $x < count($ast); $x++){
+      if(!isset($ast[$x]['type'])) {
+        //var_dump($ast[$x]);
+        throw new Exception('Emitter Error: Out of range ast');
+      }
+      switch($ast[$x]['type']){
+        case 'number':
+        case 'string':
+          $lineOutput .= $ast[$x]['value'];
+          break;
+        case 'variable':
+          $lineOutput .= $this->getVariable($ast[$x]['value']);
+          break;
+        case 'groupcall':
+          $lineOutput .= $this->groupCall($ast[$x]);
+        break;
+        case 'functioncall':
+          $lineOutput .= Functions::evaluateFunction($ast[$x]);
+          break;
+        case 'expression':
+          $lineOutput .= $this->evaluateExpression($ast[$x]['params']);
+          break;
+        default:
+          throw new Exception("Emitter Error: Unable to evaluate type: " . $ast[$x]['type']);
+          break;
+      }
+    }
+
+    return $lineOutput;
+  }
+
+  private function groupCall($ast){
+    $found = false;
+    for($y = 0; $y < count($this->fullAST); $y++){
+      if(count($ast['params']) > 1) throw new Exception('Group calls cannot have more than 1 argument in this version!');
+      if($ast['params'][0]['type'] != 'string') throw new Exception('The first argument for a group call must be the group name');
+
+      if($this->fullAST[$y]['type'] == 'group' &&  $this->fullAST[$y]['name'] == $ast['params'][0]['value']){
+        $groupOutput = $this->evaluateGroup($this->fullAST[$y]);
+        $found = true;
+      }
+    }
+    if(!$found){
+      throw new Exception('Cannot find group: ' . $ast[$x]['params'][0]['value']);
+    }
+
+    return $groupOutput;
   }
 
   private function evaluateGroup($groupAST){
@@ -178,32 +194,53 @@ class Emitter {
     if(!isset($lineProg)) throw new Exception("Emitter Error: Unknown error, line not selected for group: " . $groupAST['name']);
 
     $this->parent = 'group';
-    $this->evaluate($groupAST['params'][$lineProg]['params']);
+    return $this->evaluate($groupAST['params'][$lineProg]['params'], true);
   }
 
   private function evaluateExpression($ast) {
     $expressionOutput = '';
-    //var_dump($ast);
     switch($ast['type']){
-        case 'assign':
-          if($ast['left']['type'] != 'variable') throw new Exception("Emitter Error: Cannot assign to '". $ast['left']['type'] . "'");
-          $this->scriptVariables[$ast['left']['value']] = $this->evaluateExpression($ast['right']);
-          //var_dump($this->scriptVariables);
-          break;
-        case 'binary':
-          $expressionOutput = $this->evaluateBinary($ast['operator'], $ast['left'], $ast['right']);
-          break;
-        case 'variable':
-          $expressionOutput = $this->getVariable($ast['value']);
-          break;
-        case 'number':
-          $expressionOutput = $ast['value'];
-          break;
-        case 'string':
-          $expressionOutput = substr($ast['value'], 1, -1);
-          break;
+      case 'assign':
+        if($ast['left']['type'] != 'variable') throw new Exception("Emitter Error: Cannot assign to '". $ast['left']['type'] . "'");
+        switch($ast['operator']) {
+          case '=':
+            $this->scriptVariables[$ast['left']['value']] = $this->evaluateExpression($ast['right']);
+            break;
+          case '+=':
+            $this->scriptVariables[$ast['left']['value']] += $this->evaluateExpression($ast['right']);
+            break;
+          case '-=':
+            $this->scriptVariables[$ast['left']['value']] -= $this->evaluateExpression($ast['right']);
+            break;
+          case '*=':
+            $this->scriptVariables[$ast['left']['value']] *= $this->evaluateExpression($ast['right']);
+            break;
+          case '/=':
+            $this->scriptVariables[$ast['left']['value']] /= $this->evaluateExpression($ast['right']);
+            break;
+          default:
+          throw new Exception("Emitter Error: Unable to evaluate assign type: " . $ast['operator']);
+            break;
+        }
+        //var_dump($this->scriptVariables);
+        break;
+      case 'binary':
+        $expressionOutput .= $this->evaluateBinary($ast['operator'], $ast['left'], $ast['right']);
+        break;
+      case 'variable':
+        $expressionOutput .= $this->getVariable($ast['value']);
+        break;
+      case 'number':
+        $expressionOutput .= $ast['value'];
+        break;
+      case 'string':
+        $expressionOutput .= substr($ast['value'], 1, -1);
+        break;
+      case 'groupcall':
+        $expressionOutput .= $this->groupCall($ast);
+        break;
       default:
-          var_dump($ast);
+        var_dump($ast);
         throw new Exception("Emitter Error: Unable to evaluate expression type: " . ($ast['type'] == null ? 'null' : $ast['type']));
         break;
     }
@@ -212,8 +249,8 @@ class Emitter {
   }
 
   private function evaluateBinary($operator, $left, $right){
-    $left = $this->resolveExpressionType($left);
-    $right = $this->resolveExpressionType($right);
+    $left = $this->evaluateExpression($left);
+    $right = $this->evaluateExpression($right);
 
     switch ($operator) {
       case "-":
@@ -227,7 +264,7 @@ class Emitter {
 
     switch ($operator) {
       case "+":
-        if(is_numeric($left) && is_numeric($right)){
+        if(is_numeric($left) && is_numeric($right)) {
           return $left + $right;
         } else {
           return $left . $right;
@@ -243,30 +280,21 @@ class Emitter {
     }
   }
   
-  private function resolveExpressionType($subExpr) {
-    switch($subExpr['type']){
-      case 'number':
-        return $subExpr['value'];
-        break;
-      case 'variable':
-        return $this->getVariable($subExpr['value']);
-        break;
-      case 'binary':
-        return $this->evaluate($subExpr);
-        break;
-      default:
-      throw new Exception("Emitter Error: Unknown expression type: " . $subExpr['type']);
-    break;
+  private function setVariable($name, $value) {
+    if(is_array($value)) {
+      $this->scriptVariables[$name] = $this->evaluateSingleLine($value);
+    } else {
+      $this->scriptVariables[$name] = $value;
     }
   }
-  
-  private function setVariable($name, $value){
-    $this->scriptVariables[$name] = $value;
-  }
 
-  private function getVariable($renderVar){
+  private function getVariable($renderVar) {
     if(array_key_exists($renderVar, $this->scriptVariables)) {
-      return $this->scriptVariables[$renderVar];
+      if(is_array($this->scriptVariables[$renderVar])) {
+        throw new Exception("Emitter Error: Variable set as an array cannot convert to string: " . $renderVar);
+      } else {
+        return $this->scriptVariables[$renderVar];
+      }
     } else {
       throw new Exception("Emitter Error: Variable not declared: " . $renderVar);
     }

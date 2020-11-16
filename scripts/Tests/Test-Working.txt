@@ -1,2 +1,11 @@
-:Start
-  1,Test |(2*(3+4)*5)^2| 
+# Test file likely to change very often with quick successive tests
+
+%Variable%,[Group]+1
+
+|Start
+  ,Test Variables [Group] - %Variable%
+
+|Group
+  ,1
+  ,2
+  ,3

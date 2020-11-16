@@ -7,7 +7,8 @@ class Tokenizer {
     "/\G(\*\/)/"                => "T_BLOCKCOMMENT_CLOSE",
   );
   protected static $_terminals_special = array(
-    "/\G([:;])/"                     => "T_GROUP_IDENTIFIER",
+    // TODO: Change identifier to check it is at the start of the line first
+    "/\G([:;|])/"                    => "T_GROUP_IDENTIFIER",
     "/\G(?<=^[:;|])(\w+(?:\h\w+)?)/" => "T_GROUP_NAME",
     "/\G(\d+\-\d+\,)/"               => "T_GROUP_LINE_RANGE_NUMBER",
     "/\G(\d+\,)/"                    => "T_GROUP_LINE_SINGLE_NUMBER",
@@ -22,16 +23,20 @@ class Tokenizer {
     "/\G(\|)/"                       => "T_EXPRESSION_BOUNDARY",
   );
   protected static $_terminals_variables = array(
-    "/\G(\%[a-zA-Z0-9_]+\%\,.*?)(?=\r|\n|\r\n)/"      => "T_VARIABLE_DECLARE",
-    "/\G(\%[a-zA-Z0-9_]+\%)/"          => "T_VARIABLE_RENDER",
+    "/\G(?>(?<=^)|(?<=\n))(\%[a-zA-Z0-9_]+\%\,)/"     => "T_VARIABLE_DECLARE",
+    "/\G(\%[a-zA-Z0-9_]+\%)/"                         => "T_VARIABLE_RENDER",
   );
   protected static $_terminals_math = array(
-    "/\G(\+)/" => "T_MATH_ADDITION",
-    "/\G(\-)/" => "T_MATH_SUBTRACTION",
-    "/\G(\*)/" => "T_MATH_MULTIPLY",
-    "/\G(\/)/" => "T_MATH_DIVISION",
-    "/\G(\^)/" => "T_MATH_POWER",
-    "/\G(\=)/" => "T_MATH_EQUALS",
+    "/\G(\+\=)/" => "T_MATH_ADDITION_EQUALS",
+    "/\G(\-\=)/" => "T_MATH_SUBTRACTION_EQUALS",
+    "/\G(\*\=)/" => "T_MATH_MULTIPLY_EQUALS",
+    "/\G(\/\=)/" => "T_MATH_DIVISION_EQUALS",
+    "/\G(\+)/"   => "T_MATH_ADDITION",
+    "/\G(\-)/"   => "T_MATH_SUBTRACTION",
+    "/\G(\*)/"   => "T_MATH_MULTIPLY",
+    "/\G(\/)/"   => "T_MATH_DIVISION",
+    "/\G(\^)/"   => "T_MATH_POWER",
+    "/\G(\=)/"   => "T_MATH_EQUALS",
   );
   protected static $_terminals_general = array(
     "/\G((?:[a-zA-Z\'\"]+\_*\d*\h*)+)/"    => "T_STRING",
@@ -99,6 +104,18 @@ class Tokenizer {
 
     foreach(static::$_terminals as $pattern => $name){
       if(preg_match($pattern, $line, $matches, 0, $this->offset)){
+
+        // Change T_GROUP_IDENTIFIER to T_EXPRESSION_BOUNDARY if not at the start of a new line
+        if($name == 'T_GROUP_IDENTIFIER') {
+          // If this is the first token then it doesn't matter
+          if($this->tokens != null) {
+            $lastToken = $this->tokens[count($this->tokens)-1];
+
+            if($lastToken['token'] != 'T_NEWLINE' && $lastToken['token'] != 'T_DOUBLE_NEWLINE') {
+              $name = 'T_EXPRESSION_BOUNDARY';
+            }
+          };
+        }
 
         if($name == 'T_NEWLINE') {
           $lastToken = $this->tokens[count($this->tokens)-1];

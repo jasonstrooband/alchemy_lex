@@ -7,16 +7,6 @@ class Parser {
   private $tokens;
   private $tempPreFix;
 
-  // Old system
-  private static $precedence = array(
-    "="  => 1,
-    "||" => 2,
-    "&&" => 3,
-    "<"  => 7, ">" => 7, "<=" => 7, ">=" => 7, "==" => 7, "!=" => 7,
-    "+"  => 10, "-" => 10,
-    "*"  => 20, "/" => 20, "%" => 20,
-  );
-
   private static $operators = [
     '+' => ['precedence' => 0, 'associativity' => 0],
     '-' => ['precedence' => 0, 'associativity' => 0],
@@ -24,10 +14,14 @@ class Parser {
     '/' => ['precedence' => 1, 'associativity' => 0],
     '%' => ['precedence' => 1, 'associativity' => 0],
     '^' => ['precedence' => 2, 'associativity' => 1],
+    '=' => ['precedence' => -1, 'associativity' => 1],
+    '+=' => ['precedence' => -1, 'associativity' => 1],
+    '-=' => ['precedence' => -1, 'associativity' => 1],
+    '*=' => ['precedence' => -1, 'associativity' => 1],
+    '/=' => ['precedence' => -1, 'associativity' => 1],
   ];
 
   public function __construct($tokens){
-    //$this->tokens = static::removeEmpty($tokens);
     $this->tokens = $tokens;
     $this->current = 0;
     $ast = array(
@@ -84,21 +78,6 @@ class Parser {
       case 'T_MATH_DIVISION':
       case 'T_MATH_POWER':
       case 'T_MATH_EQUALS':
-        $strCheck = '""' == substr($token['value'], 0, 1) . substr($token['value'], -1, 1);
-        if($this->inExpression && !$strCheck){
-          return array(
-            'type'  => 'variable',
-            'value' => $token['value']
-          );
-        } else {
-          if(!$this->inComment){
-            return array(
-              'type'  => 'string',
-              'value' => $token['value']
-            );
-          }
-        }
-        break;
       case 'T_WHITESPACE':
       case 'T_PUNCTUATION':
         if(!$this->inComment && $this->parseOutput){
@@ -153,8 +132,8 @@ class Parser {
         $preFix = $this->reverseShuntingYard($expressionTokens);
         $expressionTree = $this->prefixToTree($preFix);
 
-        //var_dump("PostFix: (234+5**) " . implode($postFix));
-        //var_dump("PreFix: (**2+345) " . implode($preFix));
+        //var_dump("PostFix: " . implode(' ', $postFix));
+        //var_dump("PreFix: " . implode(' ', $preFix));
         //var_dump("Expression Tree: ");
         //var_dump($expressionTree);
         
@@ -182,7 +161,7 @@ class Parser {
           'type'  => 'declare_var',
           'params' => array(
             'name' => $varArray[0],
-            'value' => $varArray[1]
+            'value' => $this->parseDelimSubProgram('declare_var')
           )
         );
         break;
@@ -286,17 +265,18 @@ class Parser {
         $close = 'T_GROUPCALL_CLOSE_BRACKET';
         $delimiter = ']';
         break;
-      case 'expression':
-        $close = 'T_EXPRESSION_CLOSE_BRACKET';
-        $delimiter = ')';
-        break;
       case 'functioncall':
         $close = 'T_FUNCTIONCALL_CLOSE_BRACKET';
         $delimiter = '>';
         break;
+      case 'declare_var':
+        $this->parseOutput = true;
+        $close = 'T_NEWLINE';
+        $delimiter = '\n';
+        break;
       default:
         // Unknown expression type
-        throw new Exception("Parse Error: Unknown expression '" . $type . "' at line " . $token['line'] . "-" . $token['offset']);
+        throw new Exception("Parse Error: Unknown sub program '" . $type . "' at line " . $token['line'] . "-" . $token['offset']);
         break;
     }
 
@@ -323,53 +303,12 @@ class Parser {
     $close = '';
     $delimiter = '';
 
-    return $node;
-  }
-
-  // TODO: Test and remove function because of the new method
-  protected function parseExpression($left, $last_prec) {
-    // Peek for next token
-    $next_token = $this->peekNext();
-
-    // If the next token is an operator
-    if($this->isOp($next_token)){
-
-      // Get the operator precedence for the next token and the token value
-      $op_prec = $this->getPrecedence($next_token);
-      $op_val = $next_token['value'];
-
-      // If the next operator precedence is higher than the last precedence
-      if($op_prec > $last_prec){
-        // Advance to the next token
-        $this->current += 2;
-
-        // Construct the recursive binary tree
-        switch($op_val){
-          case '=':
-            $expressionType = 'assign';
-            break;
-          case '+':
-          case '-':
-          case '*':
-          case '/':
-            $expressionType = 'binary';
-            break;
-          default:
-            throw new Exception("Parse Error: Unknown operator '" . $op_val . "'");
-            break;
-        }
-        
-        return $this->parseExpression(array(
-          "type" => $expressionType,
-          "operator" => $op_val,
-          "left" => $left,
-          "right" => $this->parseExpression($this->parseToken(), $op_prec)
-        ), $last_prec);
-      }
-
+    if($type == 'declare_var') {
+      $this->parseOutput = false;
+      return $node['params'];
     }
-    // Not an operator just return the left value
-    return $left;
+
+    return $node;
   }
 
   protected function findAllTokensInExpression() {
@@ -381,13 +320,20 @@ class Parser {
 
       switch($token['token']) {
         case 'T_NUMBER':
+        case 'T_MATH_ADDITION_EQUALS':
+        case 'T_MATH_SUBTRACTION_EQUALS':
+        case 'T_MATH_MULTIPLY_EQUALS':
+        case 'T_MATH_DIVISION_EQUALS':
         case 'T_MATH_ADDITION':
         case 'T_MATH_SUBTRACTION':
         case 'T_MATH_MULTIPLY':
         case 'T_MATH_DIVISION':
         case 'T_MATH_POWER':
+        case 'T_MATH_EQUALS':
         case 'T_OPEN_BRACKET':
         case 'T_CLOSE_BRACKET':
+        case 'T_VARIABLE_RENDER':
+        case 'T_GROUPCALL':
           $stack[] = $token;
           break;
         case 'T_EXPRESSION_BOUNDARY':
@@ -412,8 +358,9 @@ class Parser {
     $output = new \SplQueue();
 
     foreach ($tokens as $token) {
-      // If token is a number
-      if (is_numeric($token['value'])) {
+      // If token is a operand
+      //TODO: Change this if to a switch case statement
+      if (is_numeric($token['value']) || $token['token'] == 'T_VARIABLE_RENDER' || $token['token'] == 'T_GROUPCALL') {
         $output->enqueue($token['value']);
         // If token is an operator
       } elseif (isset(Parser::$operators[$token['value']])) {
@@ -432,13 +379,13 @@ class Parser {
         }
 
         if (count($stack) === 0) {
-          throw new \InvalidArgumentException(sprintf('Mismatched parenthesis in input: %s', json_encode($tokens)));
+          throw new \InvalidArgumentException(sprintf('Parse Error: Mismatched parenthesis in input: %s', json_encode($tokens)));
         }
 
         // pop off '('
         $stack->pop();
       } else {
-        throw new \InvalidArgumentException(sprintf('Invalid token: %s', $token['value']));
+        throw new \InvalidArgumentException(sprintf('Parse Error: Invalid token: %s', $token['token'] . ' - ' . $token['value']));
       }
     }
 
@@ -482,31 +429,50 @@ class Parser {
       //var_dump('Operand');
       return array(
         "type" => "number",
-			  "value" => $c
+        "value" => $c
       );
       return $c;
-    } else {
+    } elseif($c[0] == '%' && $c[strlen($c)-1] == '%') {
+      return array(
+        'type' => 'variable',
+        'value' => str_replace('%', '', $c)
+      );
+    } elseif($c[0] == '[' && $c[strlen($c)-1] == ']') {
+      //TODO: Need a better way to create groupcall ast - filler method for now
+      return array(
+        "type" => "groupcall",
+        "params" => array([
+            "type" => "string",
+            "value" => substr($c, 1, -1)
+        ])
+      );
+    } elseif(isset(Parser::$operators[$c])) {
       //var_dump('Operator');
       //var_dump('Go Left');
       $left = $this->prefixToTree($this->tempPreFix);
       //var_dump('Go Right');
       $right = $this->prefixToTree($this->tempPreFix);
+      switch($c) {
+        case '=':
+        case '+=':
+        case '-=':
+        case '*=':
+        case '/=':
+          $type = 'assign';
+          break;
+        default:
+        $type = 'binary';
+          break;
+      }
       return array(
-        "type" => "binary",
+        "type" => $type,
         "operator" => $c,
         "left" => $left,
         "right" => $right
       );
+    } else {
+      throw new Exception("Parse Error: Cannot convert to tree node: " . $c);
     }
-
-    // C = first item in expr
-    // Remove first item in expr
-    // If c is a number
-      // Return empty node with that number
-    // Else is operator
-      // Left = this function with remaining expr
-      // Right = this function with remaining expr
-      // Return node with operator, left and right
   }
 
   protected static function has_operator(\SplStack $stack) {
