@@ -11,19 +11,33 @@
   ini_set('xdebug.var_display_max_children', -1);
 
   $script_names = array_slice(scandir("./scripts"), 2);
-
   $scripts = getScripts();
+  $status = array();
 
   require_once './includes/Tokenizer.php';
   require_once './includes/Parser.php';
   require_once './includes/Emitter.php';
   require_once './includes/Functions.php';
-  //require_once './includes/RPNTest.php';
 
   function print_error($msg){
-    echo "<div style=;background-color:red;color:white;font-size:26px;padding:10px;margin:10px;>";
-    print_r($msg);
+    echo "<div style=background-color:red;color:white;font-size:26px;padding:10px;margin:10px;>";
+    print_r(htmlspecialchars($msg));
     echo "</div>";
+  }
+
+  function add_status($msg){
+    global $status;
+    $status[] = $msg;
+  }
+
+  function print_status(){
+    global $status;
+    if(count($status)){
+      echo "<div id=status style=background-color:lightgrey;color:#333;font-size:12px;padding:5px;margin:10px;font-family:verdana;font-style:italic>";
+      echo "<p style=font-size:16px;font-weight:bold;margin:5px 0 10px 0;>Status</p>";
+      print_r(implode('<br /><hr />', $status));
+      echo "</div>";
+    }
   }
 
   function pr($arr){
@@ -66,6 +80,7 @@
   $tokens = new Tokenizer($input);
   $ast = new Parser($tokens->output);
   $emitter = new Emitter($ast->output);
+  print_status();
   echo 'Total execution time in seconds: ' . (microtime(true) - $time_start);
 
 ?><!DOCTYPE html>
@@ -102,7 +117,7 @@
 
   <div class="container">
 
-    <a href="https://github.com/jasonstrooband/alchemy_lex/wiki/Features-and-Roadmap">Features and Roadmap</a> - <a href="<?php echo $_SERVER['REQUEST_URI'] . '&debug'; ?>">Debug</a>
+    <a href="https://github.com/jasonstrooband/alchemy_lex/wiki">Wiki</a> - <a href="<?php echo $_SERVER['REQUEST_URI'] . '&debug'; ?>">Debug</a>
 
     <form id="script-changer" action="" method="get">
 

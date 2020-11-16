@@ -87,6 +87,11 @@ class Emitter {
           $lineOutput .= $this->groupCall($ast[$x]);
         break;
         case 'functioncall':
+          $tempParams = array();
+          foreach($ast[$x]['params'] as $param){
+            $tempParams[] = $this->evaluateSingleLine(array($param));
+          }
+          $ast[$x]['params'] = $tempParams;
           $lineOutput .= Functions::evaluateFunction($ast[$x]);
           break;
         case 'expression':
@@ -113,7 +118,7 @@ class Emitter {
       }
     }
     if(!$found){
-      throw new Exception('Cannot find group: ' . $ast[$x]['params'][0]['value']);
+      throw new Exception('Cannot find group: ' . $ast['params'][0]['value']);
     }
 
     return $groupOutput;
@@ -256,6 +261,7 @@ class Emitter {
       case "-":
       case "*":
       case "/":
+      case "^":
         if(!is_numeric($left) || !is_numeric($right)){
           throw new Exception("Emitter Error: Cannot " . $operator . " a string");
         }

@@ -7,6 +7,10 @@ class Parser {
   private $tokens;
   private $tempPreFix;
 
+  private $parameterWarn;
+  private $overrideWarn;
+  private $htmlWarn;
+  
   private static $operators = [
     '+' => ['precedence' => 0, 'associativity' => 0],
     '-' => ['precedence' => 0, 'associativity' => 0],
@@ -139,21 +143,23 @@ class Parser {
         
         return array(
           'type'  => 'expression',
-          //'params' => $this->parseExpression($this->parseToken(), 0)
           'params' => $expressionTree
         );
         break;
-      case 'T_EXPRESSION_CLOSE_BRACKET':
-        $this->inExpression = false;
-        break;
       // Function call Expression
-      case 'T_FUNCTIONCALL':
-        return $this->parseEnclosedSubProgram('functioncall');
-        break;
-      // Function call Expression
-      // Depracated
       case 'T_FUNCTIONCALL_OPEN_BRACKET':
-        return $this->parseDelimSubProgram('functioncall');
+        $functionASTRaw = $this->parseDelimSubProgram('functioncall');
+        $functionASTRaw['params'] = array_filter( $functionASTRaw['params'], function($v) {
+          if(!isset($v['value'])) return true;
+          return $v['value'] != ',';
+        });
+        $functionASTFormatted =  array(
+          'type'  => 'functioncall',
+          'value'  => array_shift($functionASTRaw['params'])['value']
+        );
+        array_shift($functionASTRaw['params']);
+        $functionASTFormatted['params'] = $functionASTRaw['params'];
+        return $functionASTFormatted;
         break;
       case 'T_VARIABLE_DECLARE':
         $varArray = explode(',', str_replace('%', '', $token['value']));
@@ -170,6 +176,18 @@ class Parser {
           'type' => 'variable',
           'value' => str_replace('%', '', $token['value'])
         );
+        break;
+      case 'T_PARAMETER':
+        if(!$this->parameterWarn) add_status('Parameters are unavailable and may be added soon'); $this->parameterWarn = true;
+        break;
+      case 'T_OVERRIDE':
+        if(!$this->overrideWarn) add_status('Overrides are unavailable and may be added soon'); $this->overrideWarn = true;
+      break;
+      case 'T_HTML':
+        if(!$this->htmlWarn) add_status('HTML tags are unavailable and may be added soon'); $this->htmlWarn = true;
+        break;
+      case 'T_HTML_UNSUPPORTED':
+        throw new Exception("Error Error: HTML with properties is not supported or unrecognised: '" . $token['value'] . "'");
         break;
       // End of Script
       case 'T_EOF':
@@ -204,22 +222,6 @@ class Parser {
         $param = Parser::parseToken($tempToken);
         $node['params'] = array($param);
         break;
-      case 'functioncall':
-        // Strip surrounding brackets
-        $value = substr($token['value'], 1, -1);
-        $value = preg_split('@~@', $value, NULL, PREG_SPLIT_NO_EMPTY);
-        $node['value'] = $value[0];
-        if(count($value) != 1) {
-          $params = preg_split('@,@', $value[1], NULL, PREG_SPLIT_NO_EMPTY);
-          $paramsNodes = array();
-          for($x = 0; $x < count($params); $x++){
-            $paramsNodes[] = $params[$x];
-          }
-          $node['params'] = $paramsNodes;
-        } else {
-          $node['params'] = array();
-        }
-      break;
       default:
         // Unknown expression type
         throw new Exception("Parse Error: Unknown expression '" . $type . "' at line " . $token['line'] . "-" . $token['offset']);
@@ -267,7 +269,7 @@ class Parser {
         break;
       case 'functioncall':
         $close = 'T_FUNCTIONCALL_CLOSE_BRACKET';
-        $delimiter = '>';
+        $delimiter = '}';
         break;
       case 'declare_var':
         $this->parseOutput = true;
@@ -293,6 +295,7 @@ class Parser {
         }
         $this->current++;
         if($this->current > count($this->tokens)-1) $this->current = count($this->tokens) - 1;
+
         $token = $this->tokens[$this->current];
         $param = Parser::parseToken();
         if(gettype($param) !== 'boolean') $node['params'][] = $param;
@@ -320,6 +323,8 @@ class Parser {
 
       switch($token['token']) {
         case 'T_NUMBER':
+        case 'T_FLOAT':
+        case 'T_STRING':
         case 'T_MATH_ADDITION_EQUALS':
         case 'T_MATH_SUBTRACTION_EQUALS':
         case 'T_MATH_MULTIPLY_EQUALS':
@@ -343,11 +348,11 @@ class Parser {
         case 'T_WHITESPACE':
           break;
         default:
-          throw new Exception("Parse Error: Token not supported in expression: '" . $token['token'] . "'");
+          throw new Exception("Parse Error: Token not supported in expression: '" . $token['token'] . "' on line " . $token['line']);
           break;
       }
 
-      $this->current++;
+      if($found == false) $this->current++;
     }
 
     return $stack;
@@ -360,7 +365,7 @@ class Parser {
     foreach ($tokens as $token) {
       // If token is a operand
       //TODO: Change this if to a switch case statement
-      if (is_numeric($token['value']) || $token['token'] == 'T_VARIABLE_RENDER' || $token['token'] == 'T_GROUPCALL') {
+      if ($token['token'] == 'T_NUMBER' || $token['token'] == 'T_FLOAT' || $token['token'] == 'T_VARIABLE_RENDER' || $token['token'] == 'T_GROUPCALL'|| $token['token'] == 'T_STRING') {
         $output->enqueue($token['value']);
         // If token is an operator
       } elseif (isset(Parser::$operators[$token['value']])) {
@@ -385,7 +390,7 @@ class Parser {
         // pop off '('
         $stack->pop();
       } else {
-        throw new \InvalidArgumentException(sprintf('Parse Error: Invalid token: %s', $token['token'] . ' - ' . $token['value']));
+        throw new \InvalidArgumentException(sprintf('Parse Error: Invalid token, Cannot Shunt: %s', $token['token'] . ' - ' . $token['value']));
       }
     }
 
@@ -470,6 +475,13 @@ class Parser {
         "left" => $left,
         "right" => $right
       );
+    } elseif(is_string($c)) {
+      //var_dump('Operand');
+      return array(
+        "type" => "variable",
+        "value" => $c
+      );
+      return $c;
     } else {
       throw new Exception("Parse Error: Cannot convert to tree node: " . $c);
     }

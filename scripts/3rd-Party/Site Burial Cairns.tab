@@ -1,0 +1,142 @@
+#******************************************************************************
+#                             HEADER
+#******************************************************************************
+# table:   SITE Burial Cairns.tab
+# by:     Richard "Kheferen" Mouton
+# Creation date:   09/05/19
+# version:   alpha 1.0
+# Last Update:   09/05/19
+#
+# DESCRIPTION:
+# Generate burial cairns that characters may encounter
+# 
+# 
+# MODIFICATIONS
+#1. Modified by RXM, 09/05/2019
+#        This is a first edition
+#2. Modified by 
+#        
+#3. Modified by 
+#        
+#4. Modified by 
+#        
+
+#******************************************************************************
+# TABLE LINKS
+# Note: This Table calls other tables as necessary:
+# 1. [what].tab [why]
+# 2. [what].tab [why]
+# 3. [what].tab [why]
+#******************************************************************************
+#         VARIABLES
+#******************************************************************************
+%Temp%,0
+%Location%,0
+%Construction%,0
+%State%,0
+%Interned%,0
+%DisturbedFlag%,0
+%ViewVariables%,0
+
+#******************************************************************************
+#         PARAMETERS
+#******************************************************************************
+@ViewVariables,1,View Variables,Yes,No
+#******************************************************************************
+#OVERRIDES
+/OverrideRolls 1
+/OutputType HTML
+
+:Start
+1,
+_|Interned=[Interned]|
+_|Construction=[Construction]|
+_|State=[State]|
+_|Location=[Location]|
+_[Display]
+_{If~%ViewVariables%=1?[Variables]}
+
+:Interned
+1,{Select~{1d3},1,are the bones,2,is the body,3,are the remains,none} of a warrior
+2,{Select~{1d3},1,are the bones,2,is the body,3,are the remains,none} of a humanoid chieftain
+3,{Select~{1d3},1,are the bones,2,is the body,3,are the remains,none} of a ranger
+4,{Select~{1d3},1,are the bones,2,are the bodies,3,are the remains,none} of a group of warriors
+5,{Select~{1d3},1,are the bones,2,are the bodies,3,are the remains,none} of a whole family
+
+:Construction
+1,jumbled pile of stones
+2,well built round stone structure
+3,round structure of loose fitting stones
+4,mound of stacked large flat stones
+5,low earthen mound
+6,low long narrow structure
+7,monolithic stone
+8,simple low stone structure
+
+:State
+1,|DisturbedFlag={1d3-1}|
+_{If~%DisturbedFlag%=0?
+_{Select~{1d3}
+_,1,the cairn appears undisturbed
+_,2,the entrance is tightly sealed
+_,3,offerings are at the entrance
+_,none}}
+_{If~%DisturbedFlag%=1?
+_{Select~{1d3}
+_,1,the entrance has been smashed
+_,2,the entrance stone has been moved
+_,3,the cairn appears intentionally damaged
+_,none}}
+_{If~%DisturbedFlag%=2?
+_{Select~{1d3}
+_,1,the entrance is unsealed
+_,2,the elements appear to have damaged the cairn
+_,3,part of the cairn has collapsed
+_,none}}
+
+:Location
+1,in a newly planted stand of trees
+2,on top of a natural hill
+3,in the center of a meadow
+4,under a rocky outcropping
+5,amongst the twisted roots of a grove of trees
+6,on an embankment next to a slow moving river
+7,on an embankment next to a slow moving stream
+8,at the bottom of a waterfall
+
+:Variables
+1,<hr><h3>SITE Burial Cairns</h3><br>
+_Location: %Location%<br>
+_Construction: %Construction%<br>
+_State: %State%<br>
+_DisturbedFlag: %DisturbedFlag% =
+_ {Select~{Calc~(1+%DisturbedFlag%)},1,undisturbed,2,looted or desecrated,3,opened by age or the elements,none}<br>
+_Interned: %Interned%<br>
+
+:Display
+1,
+_A %Construction% {Select~{1d3},1,is,2,is located,3,stands,none} %Location%.
+_ {Cap~%State%} and
+_{If~%DisturbedFlag%=0? if the party wishes to investigate the cairn they would find in the burial chamber %Interned%.}
+_{If~%DisturbedFlag%=1? inside the chamber %Interned%.}
+_{If~%DisturbedFlag%=2? inside the burial chamber %Interned%.}
+2,
+_A %Construction% {Select~{1d2},1,is,2,makes up,none} a burial cairn and %State%.
+_ The cairn {Select~{1d3},1,is,2,is located,3,stands,none} %Location% and
+_ inside %Interned%.
+3,
+_{Cap~%Location%} {Select~{1d3},1,is,2,was built,3,stands,none} a %Construction% that is a burial cairn.
+_ {Cap~%State%} and
+_{If~%DisturbedFlag%=0? if the party wishes to investigate the cairn they would find in the burial chamber %Interned%.}
+_{If~%DisturbedFlag%=1? inside the chamber %Interned%.}
+_{If~%DisturbedFlag%=2? inside %Interned%.}
+4,
+_{Cap~%Location%} is a burial cairn
+_{If~%DisturbedFlag%=0?|State={Select~{1d3},1,that appears undisturbed,2,with an entrance that is tightly sealed,3,with offerings at the entrance,none}|}
+_{If~%DisturbedFlag%=1?|State={Select~{1d3},1,that appears to be intentionally damaged,2,which has had the entrance smashed,3,with the entrance stone moved to the side,none}|}
+_{If~%DisturbedFlag%=2?|State={Select~{1d3},1,that has partially collapsed,2,with an entrance that is unsealed,3,the has been damaged by the elements,none}|}
+_ %State%.
+_ The cairn {Select~{1d2},1,itself is,2,is,none} a %Construction% with a burial chamber below. In the chamber
+_{If~%DisturbedFlag%=0? %Interned%.}
+_{If~%DisturbedFlag%=1? %Interned% that has been disturbed.}
+_{If~%DisturbedFlag%=2? %Interned%.}

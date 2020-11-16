@@ -1,0 +1,29 @@
+# Here is a social class table that is fairly accurate to medieval Europe and simple.
+
+# Color function does not work yet need to be able to use multiple parameters
+
+:Start
+1, You are from the [SC1] class. {Status~by Scott Stokes}
+
+:SC1
+01-03,slave or indentured servant
+04-59,servant or farmer
+60-70,working
+71-80,tradesman
+81-94,craftsman
+95-98,Guild Leader / Mayor
+99-100,{Color~Blue,[SC2]}
+
+:SC2
+01-40,Knight / Dame
+41-60,Baron
+61-80,Viscount or Governor
+81-94,Count or Earl
+95-99,Marquis or Marquees
+100,{Color~Purple,[SC3]}
+
+:SC3
+1-90,Sovereign Prince, Duke or Imperial Prince
+91-98,Grand or Arch Duke, or Sovereign Crown Prince
+99,Imperial Crown Prince, Sovereign King
+100,Emperor or Empress

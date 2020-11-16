@@ -6,9 +6,14 @@ class Tokenizer {
     "/\G(\/\*)/"                => "T_BLOCKCOMMENT_OPEN",
     "/\G(\*\/)/"                => "T_BLOCKCOMMENT_CLOSE",
   );
+  protected static $_terminals_other = array(
+    "/\G(?>(?<=^)|(?<=\n))(\@.*?)(?=\r|\n|\r\n)/"  => "T_PARAMETER",
+    "/\G(?>(?<=^)|(?<=\n))(\/.*?)(?=\r|\n|\r\n)/"  => "T_OVERRIDE",
+    "/\G(\<\/?[a-zA-Z0-9]+(?>\s\/)?\>)/"           => "T_HTML",
+    "/\G(\<.*\=.*?\>)/"                            => "T_HTML_UNSUPPORTED",
+  );
   protected static $_terminals_special = array(
-    // TODO: Change identifier to check it is at the start of the line first
-    "/\G([:;|])/"                    => "T_GROUP_IDENTIFIER",
+    "/\G(?>(?<=^)|(?<=\n))([:;|])/"  => "T_GROUP_IDENTIFIER",
     "/\G(?<=^[:;|])(\w+(?:\h\w+)?)/" => "T_GROUP_NAME",
     "/\G(\d+\-\d+\,)/"               => "T_GROUP_LINE_RANGE_NUMBER",
     "/\G(\d+\,)/"                    => "T_GROUP_LINE_SINGLE_NUMBER",
@@ -16,15 +21,13 @@ class Tokenizer {
     "/\G(\[.*?\])/"                  => "T_GROUPCALL",
     //"/\G(\[)/"                     => "T_GROUPCALL_OPEN_BRACKET",
     //"/\G(\])/"                     => "T_GROUPCALL_CLOSE_BRACKET",
-    "/\G(\{.*?\})/"                  => "T_FUNCTIONCALL",
-    //"/\G(\<)/"                     => "T_FUNCTIONCALL_OPEN_BRACKET",
-    //"/\G(\>)/"                     => "T_FUNCTIONCALL_CLOSE_BRACKET",
-    //"/\G(\(.*?\))/"                => "T_EXPRESSION",
+    "/\G(\{)/"                       => "T_FUNCTIONCALL_OPEN_BRACKET",
+    "/\G(\})/"                       => "T_FUNCTIONCALL_CLOSE_BRACKET",
     "/\G(\|)/"                       => "T_EXPRESSION_BOUNDARY",
   );
   protected static $_terminals_variables = array(
-    "/\G(?>(?<=^)|(?<=\n))(\%[a-zA-Z0-9_]+\%\,)/"     => "T_VARIABLE_DECLARE",
-    "/\G(\%[a-zA-Z0-9_]+\%)/"                         => "T_VARIABLE_RENDER",
+    "/\G(?>(?<=^)|(?<=\n))(\%[a-zA-Z0-9_]+\%\,)/"  => "T_VARIABLE_DECLARE",
+    "/\G(\%[a-zA-Z0-9_]+\%)/"                      => "T_VARIABLE_RENDER",
   );
   protected static $_terminals_math = array(
     "/\G(\+\=)/" => "T_MATH_ADDITION_EQUALS",
@@ -47,10 +50,6 @@ class Tokenizer {
     "/\G(\d+)/"                            => "T_NUMBER",
     "/\G(\()/"                             => "T_OPEN_BRACKET",
     "/\G(\))/"                             => "T_CLOSE_BRACKET",
-    //"/\G(?<=[\[\(])(\w+)/"               => "T_IDENTIFIER",
-    //"/\G(\b[a-zA-Z0-9\s]+\b)/"           => "T_STRING",
-    //"/\G(\b.+?(?=[\(<[]))/"              => "T_STRING",
-    //"/\G(\b.+?(?=[\(\<\>\[\]\r\n\~]))/"  => "T_STRING",
   );
   protected static $_terminals = array();
 
@@ -62,6 +61,7 @@ class Tokenizer {
     static::$_terminals = array_merge(
       static::$_terminals,
       static::$_terminals_comments,
+      static::$_terminals_other,
       static::$_terminals_variables,
       static::$_terminals_special,
       static::$_terminals_math,
@@ -105,21 +105,9 @@ class Tokenizer {
     foreach(static::$_terminals as $pattern => $name){
       if(preg_match($pattern, $line, $matches, 0, $this->offset)){
 
-        // Change T_GROUP_IDENTIFIER to T_EXPRESSION_BOUNDARY if not at the start of a new line
-        if($name == 'T_GROUP_IDENTIFIER') {
-          // If this is the first token then it doesn't matter
-          if($this->tokens != null) {
-            $lastToken = $this->tokens[count($this->tokens)-1];
-
-            if($lastToken['token'] != 'T_NEWLINE' && $lastToken['token'] != 'T_DOUBLE_NEWLINE') {
-              $name = 'T_EXPRESSION_BOUNDARY';
-            }
-          };
-        }
-
         if($name == 'T_NEWLINE') {
           $lastToken = $this->tokens[count($this->tokens)-1];
-          
+
           if($lastToken['token'] == 'T_NEWLINE') {
             $name = 'T_DOUBLE_NEWLINE';
           }
@@ -138,16 +126,8 @@ class Tokenizer {
   }
 
   protected function applyMultiline($str){
-    //echo "<pre>";
-    //print_r(json_encode($str));
-    //echo "</pre>";
-
-    $str = preg_replace('/\_(?:\r|\n)\s+/', '', $str);
-
-    //echo "<pre>";
-    //print_r(json_encode($str));
-    //echo "</pre>";
-
+    //$str = preg_replace('/\_(?:\r|\n)\s+/', '', $str);
+    $str = preg_replace('/(?:\r|\n)\s+\_/', '', $str);
     return $str;
   }
 }

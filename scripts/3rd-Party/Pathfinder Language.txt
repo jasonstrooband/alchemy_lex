@@ -1,6 +1,9 @@
 # https://paizo.com/threads/rzs2ofdc?Pathfinder-Tables-for-TableSmith
 # Generates languages with leaning to Human, Dwarven, and Elven
 ;Start
+  1,{CapEachWord~[Language]}
+
+;Language
   40,[Language Common]
   2,[Language Ancient]
   9,dwarven

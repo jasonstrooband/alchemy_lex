@@ -1,11 +1,7 @@
 # Test file likely to change very often with quick successive tests
 
-%Variable%,[Group]+1
-
-|Start
-  ,Test Variables [Group] - %Variable%
-
-|Group
-  ,1
-  ,2
-  ,3
+:Start
+1,
+_|Status=5|
+_{Status~%Status%}
+_Test Variables with strings

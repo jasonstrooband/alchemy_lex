@@ -10,11 +10,20 @@ class Functions {
       case 'cap':
         return self::cap($ast['params']);
         break;
+      case 'capeachword':
+        return self::capeachword($ast['params']);
+        break;
+      case 'color':
+        return self::color($ast['params']);
+        break;
       case 'dice':
         return self::dice($ast['params']);
         break;
       case 'isnumber':
         return self::isNumber($ast['params']);
+        break;
+      case 'status':
+        return self::status($ast['params']);
         break;
       default:
         throw new Exception("Emitter Error: Function '" . $functionName . "' does not exist");
@@ -22,6 +31,8 @@ class Functions {
     }
     throw new Exception("Emitter Error: No return value found for function '" . $functionName . "'");
   }
+
+  // ******************************************************************************************************************************** //
 
   private static function abs($params) {
     self::checkFunctionParams('Abs', count($params), 1);
@@ -31,6 +42,16 @@ class Functions {
   private static function cap($params) {
     self::checkFunctionParams('Cap', count($params), 1);
     return ucfirst($params[0]);
+  }
+
+  private static function capeachword($params) {
+    self::checkFunctionParams('CapEachWord', count($params), 1);
+    return ucwords($params[0]);
+  }
+
+  private static function color($params) {
+    self::checkFunctionParams('Color', count($params), 2);
+    return "<span style=color:". strtolower($params[0]) . ";>" . $params[1] . "</span>";
   }
 
   private static function dice($params) {
@@ -58,6 +79,14 @@ class Functions {
     self::checkFunctionParams('IsNumber', count($params), 1);
     return (is_numeric($params[0]) ? '1' : '0');
   }
+
+  private static function status($params) {
+    self::checkFunctionParams('STatus', count($params), 1);
+    add_status($params[0]);
+    return '';
+  }
+
+  // ******************************************************************************************************************************** //
   
   private static function checkFunctionParams($functionName, $paramGiven, $paramMin = null, $paramMax = null) {
     $range = $paramMin . '-' . $paramMax;
