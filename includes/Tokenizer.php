@@ -1,17 +1,21 @@
 <?php
 
 class Tokenizer {
+  // Comment Tokens
   protected static $_terminals_comments = array(
     "/\G(#.*?)(?=\r|\n|\r\n)/"  => "T_LINECOMMENT",
+    // TODO update to have a complete encapsulating token
     "/\G(\/\*)/"                => "T_BLOCKCOMMENT_OPEN",
     "/\G(\*\/)/"                => "T_BLOCKCOMMENT_CLOSE",
   );
+  // Other unrelated tokens
   protected static $_terminals_other = array(
     "/\G(?>(?<=^)|(?<=\n))(\@.*?)(?=\r|\n|\r\n)/"  => "T_PARAMETER",
     "/\G(?>(?<=^)|(?<=\n))(\/.*?)(?=\r|\n|\r\n)/"  => "T_OVERRIDE",
     "/\G(\<\/?[a-zA-Z0-9]+(?>\s\/)?\>)/"           => "T_HTML",
     "/\G(\<.*\=.*?\>)/"                            => "T_HTML_UNSUPPORTED",
   );
+  // Group, Lines, Group Call and Function Call tokens
   protected static $_terminals_special = array(
     "/\G(?>(?<=^)|(?<=\n))([:;|])/"  => "T_GROUP_IDENTIFIER",
     "/\G(?<=^[:;|])(\w+(?:\h\w+)?)/" => "T_GROUP_NAME",
@@ -25,10 +29,12 @@ class Tokenizer {
     "/\G(\})/"                       => "T_FUNCTIONCALL_CLOSE_BRACKET",
     "/\G(\|)/"                       => "T_EXPRESSION_BOUNDARY",
   );
+  // Variable tokens
   protected static $_terminals_variables = array(
     "/\G(?>(?<=^)|(?<=\n))(\%[a-zA-Z0-9_]+\%\,)/"  => "T_VARIABLE_DECLARE",
     "/\G(\%[a-zA-Z0-9_]+\%)/"                      => "T_VARIABLE_RENDER",
   );
+  // Maths tokens
   protected static $_terminals_math = array(
     "/\G(\+\=)/" => "T_MATH_ADDITION_EQUALS",
     "/\G(\-\=)/" => "T_MATH_SUBTRACTION_EQUALS",
@@ -41,6 +47,7 @@ class Tokenizer {
     "/\G(\^)/"   => "T_MATH_POWER",
     "/\G(\=)/"   => "T_MATH_EQUALS",
   );
+  //Output tokens - can be context specific
   protected static $_terminals_general = array(
     "/\G((?:[a-zA-Z\'\"]+\_*\d*\h*)+)/"    => "T_STRING",
     "/\G(\r|\n|\r\n)/"                     => "T_NEWLINE",
@@ -51,13 +58,15 @@ class Tokenizer {
     "/\G(\()/"                             => "T_OPEN_BRACKET",
     "/\G(\))/"                             => "T_CLOSE_BRACKET",
   );
-  protected static $_terminals = array();
 
+  // Declare Variables
+  protected static $_terminals = array();
   public $output;
   private $tokens;
   private $offset;
 
   public function __construct($source){
+    // Merge token groups into one
     static::$_terminals = array_merge(
       static::$_terminals,
       static::$_terminals_comments,
@@ -68,16 +77,17 @@ class Tokenizer {
       static::$_terminals_general
     );
 
-    //var_dump(json_encode($source));
-
+    // Remove all mutiline into single lines
     $source = $this->applyMultiline($source);
 
     // Separate the lines into an array
     $source = explode("\n", $source);
 
+    // For every line in the script
     foreach($source as $number => $line){
       $this->offset = 0;
 
+      // Match the next characters to a token and then update the offset
       while($this->offset < strlen($line)){
         try {
           $result = $this->match($line, $number);
@@ -89,6 +99,8 @@ class Tokenizer {
         $this->offset += strlen($result['value']);
       }
     }
+
+    // Add a T_EOF to represent the end of the file
     $this->tokens[] = array(
       'token'  => 'T_EOF',
       'value'  => '',
@@ -99,12 +111,14 @@ class Tokenizer {
     $this->output = $this->tokens;
   }
 
+  // Match the remaining characters on a line to a token
   protected function match($line, $number){
     $string = substr($line, $this->offset);
 
     foreach(static::$_terminals as $pattern => $name){
       if(preg_match($pattern, $line, $matches, 0, $this->offset)){
 
+        // If there is two newlines in a row the the second newline becomes a double newline token
         if($name == 'T_NEWLINE') {
           $lastToken = $this->tokens[count($this->tokens)-1];
 
@@ -122,11 +136,12 @@ class Tokenizer {
       }
     }
 
+    // If no match was made then there is an unexpected set of characters
     throw new Exception("Tokenizer Error: Unable to tokenize line at " . ($number + 1) . "-" . ($this->offset + 1) . ". " . json_encode($string));
   }
 
+  // Remove multiline character and form single lines in place
   protected function applyMultiline($str){
-    //$str = preg_replace('/\_(?:\r|\n)\s+/', '', $str);
     $str = preg_replace('/(?:\r|\n)\s+\_/', '', $str);
     return $str;
   }

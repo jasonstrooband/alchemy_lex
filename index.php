@@ -1,6 +1,4 @@
 <?php
-  // TODO: Write in comments for fields
-  // TODO: Add expressions with math support and precedence
   // TODO: Add error checking for equal share group type
   // TODO: Add error check for lines without a number range or single and not equal share group
   // TODO: Add error check for multiline to see if the next line is an output line
@@ -14,52 +12,58 @@
   $scripts = getScripts();
   $status = array();
 
+  // Included php classes
   require_once './includes/Tokenizer.php';
   require_once './includes/Parser.php';
   require_once './includes/Emitter.php';
   require_once './includes/Functions.php';
 
+  //Displays an error message at the top of the pages - is called by Tokenizer, Parser and Emitter
   function print_error($msg){
     echo "<div style=background-color:red;color:white;font-size:26px;padding:10px;margin:10px;>";
     print_r(htmlspecialchars($msg));
     echo "</div>";
   }
 
+  // Adds a message to the status stack
   function add_status($msg){
     global $status;
     $status[] = $msg;
   }
 
+  // Print all the status messages to the top of the screen
   function print_status(){
     global $status;
     if(count($status)){
-      echo "<div id=status style=background-color:lightgrey;color:#333;font-size:12px;padding:5px;margin:10px;font-family:verdana;font-style:italic>";
-      echo "<p style=font-size:16px;font-weight:bold;margin:5px 0 10px 0;>Status</p>";
+      echo "<div id=status style='background-color:lightgrey;color:#333;font-size:12px;padding:5px;margin:10px 0px;font-family:verdana;font-style:italic;'>";
+      echo "<p style='font-size:16px;font-weight:bold;margin:5px 0 10px 0;'>Status</p>";
       print_r(implode('<br /><hr />', $status));
       echo "</div>";
     }
   }
 
+  // Prints out a debug variable using print_r() function
   function pr($arr){
     print "<pre>";
     print_r($arr);
     print "</pre>";
   }
+
+  // Prints out a debug variable using var_dump() function
   function vd($arr){
     print "<pre>";
     var_dump($arr);
     print "</pre>";
   }
 
+  //Returns all the scripts in the scripts directory as a sorted list of filenames
   function getScripts(){
     $dir = "./scripts";
     $listings = array_slice(scandir($dir), 2);
-
-    // prevent empty ordered elements
-    if (count($listings) < 1)
-      return 0;
-  
     $listingsSorted = array();
+
+    // Prevent empty elements
+    if (count($listings) < 1) return 0;
 
     for($x = 0; $x < count($listings); $x++){
       if(is_dir($dir.'/'.$listings[$x])){
@@ -70,12 +74,14 @@
     return $listingsSorted;
   }
 
+  // If no script has been selected load Tes-Basic else load the selected script contents
   if(!isset($_GET['script']) || $_GET['script'] == ''){
     $input = file_get_contents('./scripts/Tests/Test-Basic.txt', true);
   } else {
     $input = file_get_contents('./scripts/' . $_GET['script'], true);
   }
-  // At start of script
+
+  // Start a timer, execute the included classes, display the execution time and display all the status messages
   $time_start = microtime(true); 
   $tokens = new Tokenizer($input);
   $ast = new Parser($tokens->output);
@@ -128,10 +134,7 @@
           <optgroup label="<?php echo $script_cat_key; ?>">
             <?php
               foreach($script_names as $name) {
-                //$script_name = basename($name, '.txt');
-                $script_value = $script_cat_key . '/' . $name;
-                //echo $script_value;
-                //echo urldecode($_GET['script']); ?>
+                $script_value = $script_cat_key . '/' . $name;  ?>
                 <option <?php echo (isset($_GET['script']) && urldecode($_GET['script']) == $script_value ? 'selected="selected"' : '') ?> value="<?php echo $script_value; ?>"><?php echo $name; ?></option>
               <?php } ?>
           </optgroup>
@@ -159,15 +162,15 @@
         <?php if(isset($_GET['debug'])) { ?>
           <div class="col">
             <h2>Tokens</h2>
-            <div class="pre"><?php (isset($tokens) ? var_dump($tokens->output) : '') ?></div>
+            <div class="pre"><?php (isset($tokens) ? vd($tokens->output) : '') ?></div>
           </div>
           <div class="col">
             <h2>AST</h2>
-            <div class="pre"><?php (isset($ast) ? var_dump($ast->output) : '') ?></div>
+            <div class="pre"><?php (isset($ast) ? vd($ast->output) : '') ?></div>
           </div>
           <div class="col">
             <h2>Emitter</h2>
-            <div class="pre"><?php (isset($emitter) ? var_dump($emitter->output) : '') ?></div>
+            <div class="pre"><?php (isset($emitter) ? vd($emitter->output) : '') ?></div>
           </div>
         <?php } ?>
       </div>
